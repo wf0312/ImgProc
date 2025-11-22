@@ -138,6 +138,7 @@ int cvtTest(int argc, char **argv) {
 
     switch (src_type) {
     case ImageFormat::GRAY:
+        fromGray(src, dst_type, loop);
         break;
     case ImageFormat::RGB:
         fromRgb(src, dst_type, loop);

@@ -13,10 +13,16 @@ link_directories(
 )
 
 add_executable(${PROJECT_NAME}
+    src/cvt_color/from_gray.cpp
+    src/cvt_color/from_bgra.cpp
+    src/cvt_color/from_bgr.cpp
+    src/cvt_color/from_rgba.cpp
+    src/cvt_color/from_rgb.cpp
     src/cvt_color/from_yuyv.cpp
     src/cvt_color/from_uyvy.cpp
-    src/cvt_color/from_rgb.cpp
-    src/cvt_color/from_rgba.cpp
+    src/cvt_color/from_i420.cpp
+    src/cvt_color/from_nv12.cpp
+    src/cvt_color/from_nv21.cpp
     src/image.cpp
     test/test.cpp
     test/cvt_test.cpp

@@ -45,18 +45,6 @@ ADD_IMG_CONVERT(rgb_to_i420);
 ADD_IMG_CONVERT(rgb_to_nv12);
 ADD_IMG_CONVERT(rgb_to_nv21);
 
-// from bgr
-ADD_IMG_CONVERT(bgr_to_gray);
-ADD_IMG_CONVERT(bgr_to_rgba);
-ADD_IMG_CONVERT(bgr_to_rgb);
-ADD_IMG_CONVERT(bgr_to_bgra);
-ADD_IMG_CONVERT(bgr_to_bgr);
-ADD_IMG_CONVERT(bgr_to_yuyv);
-ADD_IMG_CONVERT(bgr_to_uyvy);
-ADD_IMG_CONVERT(bgr_to_i420);
-ADD_IMG_CONVERT(bgr_to_nv12);
-ADD_IMG_CONVERT(bgr_to_nv21);
-
 // from bgra
 ADD_IMG_CONVERT(bgra_to_gray);
 ADD_IMG_CONVERT(bgra_to_rgba);
@@ -68,6 +56,18 @@ ADD_IMG_CONVERT(bgra_to_uyvy);
 ADD_IMG_CONVERT(bgra_to_i420);
 ADD_IMG_CONVERT(bgra_to_nv12);
 ADD_IMG_CONVERT(bgra_to_nv21);
+
+// from bgr
+ADD_IMG_CONVERT(bgr_to_gray);
+ADD_IMG_CONVERT(bgr_to_rgba);
+ADD_IMG_CONVERT(bgr_to_rgb);
+ADD_IMG_CONVERT(bgr_to_bgra);
+ADD_IMG_CONVERT(bgr_to_bgr);
+ADD_IMG_CONVERT(bgr_to_yuyv);
+ADD_IMG_CONVERT(bgr_to_uyvy);
+ADD_IMG_CONVERT(bgr_to_i420);
+ADD_IMG_CONVERT(bgr_to_nv12);
+ADD_IMG_CONVERT(bgr_to_nv21);
 
 // from yuyv
 ADD_IMG_CONVERT(yuyv_to_gray);
@@ -92,5 +92,41 @@ ADD_IMG_CONVERT(uyvy_to_uyvy);
 ADD_IMG_CONVERT(uyvy_to_i420);
 ADD_IMG_CONVERT(uyvy_to_nv12);
 ADD_IMG_CONVERT(uyvy_to_nv21);
+
+// from i420
+ADD_IMG_CONVERT(i420_to_gray);
+ADD_IMG_CONVERT(i420_to_rgba);
+ADD_IMG_CONVERT(i420_to_rgb);
+ADD_IMG_CONVERT(i420_to_bgra);
+ADD_IMG_CONVERT(i420_to_bgr);
+ADD_IMG_CONVERT(i420_to_yuyv);
+ADD_IMG_CONVERT(i420_to_uyvy);
+ADD_IMG_CONVERT(i420_to_i420);
+ADD_IMG_CONVERT(i420_to_nv12);
+ADD_IMG_CONVERT(i420_to_nv21);
+
+// from nv12
+ADD_IMG_CONVERT(nv12_to_gray);
+ADD_IMG_CONVERT(nv12_to_rgba);
+ADD_IMG_CONVERT(nv12_to_rgb);
+ADD_IMG_CONVERT(nv12_to_bgra);
+ADD_IMG_CONVERT(nv12_to_bgr);
+ADD_IMG_CONVERT(nv12_to_yuyv);
+ADD_IMG_CONVERT(nv12_to_uyvy);
+ADD_IMG_CONVERT(nv12_to_i420);
+ADD_IMG_CONVERT(nv12_to_nv12);
+ADD_IMG_CONVERT(nv12_to_nv21);
+
+// from nv21
+ADD_IMG_CONVERT(nv21_to_gray);
+ADD_IMG_CONVERT(nv21_to_rgba);
+ADD_IMG_CONVERT(nv21_to_rgb);
+ADD_IMG_CONVERT(nv21_to_bgra);
+ADD_IMG_CONVERT(nv21_to_bgr);
+ADD_IMG_CONVERT(nv21_to_yuyv);
+ADD_IMG_CONVERT(nv21_to_uyvy);
+ADD_IMG_CONVERT(nv21_to_i420);
+ADD_IMG_CONVERT(nv21_to_nv12);
+ADD_IMG_CONVERT(nv21_to_nv21);
 
 NAMESPACE_END

@@ -146,6 +146,7 @@ int cvtTest(int argc, char **argv) {
         fromRgba(src, dst_type, loop);
         break;
     case ImageFormat::BGR:
+        fromBgr(src, dst_type, loop);
         break;
     case ImageFormat::BGRA:
         break;

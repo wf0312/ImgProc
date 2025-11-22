@@ -7,7 +7,7 @@
 NAMESPACE_BEGIN
 
 constexpr int64_t k_pixel_size = 3L;
-void bgr_to_gray_c(const Image &src, const Image &dst)
+void nv12_to_gray_c(const Image &src, const Image &dst)
 {
     auto size = src.size();
     auto src_buf = src.data();
@@ -18,7 +18,7 @@ void bgr_to_gray_c(const Image &src, const Image &dst)
     }
 }
 
-void bgr_to_rgba_c(const Image &src, const Image &dst)
+void nv12_to_rgba_c(const Image &src, const Image &dst)
 {
     auto size = src.size();
     auto src_buf = src.data();
@@ -32,7 +32,7 @@ void bgr_to_rgba_c(const Image &src, const Image &dst)
     }
 }
 
-void bgr_to_rgb_c(const Image &src, const Image &dst)
+void nv12_to_rgb_c(const Image &src, const Image &dst)
 {
     auto size = src.size();
     auto src_buf = src.data();
@@ -45,7 +45,7 @@ void bgr_to_rgb_c(const Image &src, const Image &dst)
     }
 }
 
-void bgr_to_bgra_c(const Image &src, const Image &dst)
+void nv12_to_bgra_c(const Image &src, const Image &dst)
 {
     auto size = src.size();
     auto src_buf = src.data();
@@ -59,7 +59,7 @@ void bgr_to_bgra_c(const Image &src, const Image &dst)
     }
 }
 
-void bgr_to_bgr_c(const Image &src, const Image &dst)
+void nv12_to_bgr_c(const Image &src, const Image &dst)
 {
     auto size = src.size();
     auto src_buf = src.data();
@@ -68,7 +68,7 @@ void bgr_to_bgr_c(const Image &src, const Image &dst)
     std::copy_n(src_buf, size, dst_buf);
 }
 
-void bgr_to_yuyv_c(const Image &src, const Image &dst)
+void nv12_to_yuyv_c(const Image &src, const Image &dst)
 {
     auto size = src.size();
     auto src_buf = src.data();
@@ -90,7 +90,7 @@ void bgr_to_yuyv_c(const Image &src, const Image &dst)
     }
 }
 
-void bgr_to_uyvy_c(const Image &src, const Image &dst)
+void nv12_to_uyvy_c(const Image &src, const Image &dst)
 {
     auto size = src.size();
     auto src_buf = src.data();
@@ -112,7 +112,7 @@ void bgr_to_uyvy_c(const Image &src, const Image &dst)
     }
 }
 
-void bgr_to_i420_c(const Image &src, const Image &dst)
+void nv12_to_i420_c(const Image &src, const Image &dst)
 {
     auto size = src.size();
     auto src_buf = src.data();
@@ -171,7 +171,7 @@ void bgr_to_i420_c(const Image &src, const Image &dst)
     }
 }
 
-void bgr_to_nv12_c(const Image &src, const Image &dst)
+void nv12_to_nv12_c(const Image &src, const Image &dst)
 {
     auto size = src.size();
     auto src_buf = src.data();
@@ -212,11 +212,6 @@ void bgr_to_nv12_c(const Image &src, const Image &dst)
             auto v10 = (src1[j + 2] * k_rgb_2_yuv.m_vr - src1[j + 1] * k_rgb_2_yuv.m_vg - src1[j + 0] * k_rgb_2_yuv.m_vb) >> k_shift;
             auto v11 = (src1[j + 5] * k_rgb_2_yuv.m_vr - src1[j + 4] * k_rgb_2_yuv.m_vg - src1[j + 3] * k_rgb_2_yuv.m_vb) >> k_shift;
 
-            y0[k + 0] = y00;
-            y0[k + 1] = y01;
-            y1[k + 0] = y10;
-            y1[k + 1] = y11;
-            
             uv[k + 0] = saturate_u8(((u00 + u01 + u10 + u11) >> 2) + k_offset);
             uv[k + 1] = saturate_u8(((v00 + v01 + v10 + v11) >> 2) + k_offset);
         }
@@ -228,7 +223,7 @@ void bgr_to_nv12_c(const Image &src, const Image &dst)
     }
 }
 
-void bgr_to_nv21_c(const Image &src, const Image &dst)
+void nv12_to_nv21_c(const Image &src, const Image &dst)
 {
     auto size = src.size();
     auto src_buf = src.data();
@@ -251,7 +246,7 @@ void bgr_to_nv21_c(const Image &src, const Image &dst)
     auto y1 = dst_buf + ys;
 
     auto uv   = dst_buf + (static_cast<int64_t>(w) * h);
-    auto uvs = static_cast<int64_t>(w);
+    auto uvs = static_cast<int64_t>(w) >> 1;
 
     constexpr auto k_offset        = 1U << k_shift;
 
@@ -285,7 +280,7 @@ void bgr_to_nv21_c(const Image &src, const Image &dst)
     }
 }
 
-void bgr_to_gray(const Image &src, const Image &dst)
+void nv12_to_gray(const Image &src, const Image &dst)
 {
     asm volatile(
         LOAD_Y_PARAM
@@ -330,7 +325,7 @@ void bgr_to_gray(const Image &src, const Image &dst)
         , "v0", "v1", "v2", "v3", USED_Y_REG);
 }
 
-void bgr_to_rgba(const Image &src, const Image &dst)
+void nv12_to_rgba(const Image &src, const Image &dst)
 {
     asm volatile(
         R"(
@@ -367,7 +362,7 @@ void bgr_to_rgba(const Image &src, const Image &dst)
         : "cc", "memory", "x0", "v0", "v1", "v2", "v3", "v4");
 }
 
-void bgr_to_rgb(const Image &src, const Image &dst)
+void nv12_to_rgb(const Image &src, const Image &dst)
 {
     asm volatile(
         R"(
@@ -402,7 +397,7 @@ void bgr_to_rgb(const Image &src, const Image &dst)
         : "memory", "cc", "x0", "v0", "v1", "v2");
 }
 
-void bgr_to_bgr(const Image &src, const Image &dst)
+void nv12_to_bgr(const Image &src, const Image &dst)
 {
     asm volatile(
         R"(
@@ -432,7 +427,7 @@ void bgr_to_bgr(const Image &src, const Image &dst)
         : "memory", "cc", "x0", "v0", "v1", "v2");
 }
 
-void bgr_to_bgra(const Image &src, const Image &dst)
+void nv12_to_bgra(const Image &src, const Image &dst)
 {
     asm volatile(
         R"(
@@ -464,7 +459,7 @@ void bgr_to_bgra(const Image &src, const Image &dst)
         : "memory", "cc", "x0", "v0", "v1", "v2", "v3");
 }
 
-void bgr_to_yuyv(const Image &src, const Image &dst)
+void nv12_to_yuyv(const Image &src, const Image &dst)
 {
     asm volatile(
         LOAD_YUV_PARAM
@@ -546,7 +541,7 @@ void bgr_to_yuyv(const Image &src, const Image &dst)
         , "v0", "v1", "v2", "v3", "v4", "v5", "v23", USED_YUV_REG);
 }
 
-void bgr_to_uyvy(const Image &src, const Image &dst)
+void nv12_to_uyvy(const Image &src, const Image &dst)
 {
     asm volatile(
         LOAD_YUV_PARAM
@@ -561,24 +556,24 @@ void bgr_to_uyvy(const Image &src, const Image &dst)
 
         UYVY_L8:
             ld3 {v0.8b, v1.8b, v2.8b}, [%0], #24
-            umull v4.8h, v2.8b, v31.8b
+            umull v4.8h, v0.8b, v31.8b
             umlal v4.8h, v1.8b, v30.8b
             prfm pldl1keep, [%0, 448]
-            umlal v4.8h, v0.8b, v29.8b
+            umlal v4.8h, v2.8b, v29.8b
             uqshrn v4.8b, v4.8h, %[shift]
 
             uaddlp v0.4h, v0.8b
             uaddlp v1.4h, v1.8b
             uaddlp v2.4h, v2.8b
 
-            mul v3.8h, v0.8h, v26.8h
-            mls v3.8h, v2.8h, v24.8h
+            mul v3.8h, v2.8h, v26.8h
+            mls v3.8h, v0.8h, v24.8h
             mls v3.8h, v1.8h, v25.8h
             addhn v3.8b, v3.8h, v23.8h
 
-            mul v5.8h, v2.8h, v26.8h
+            mul v5.8h, v0.8h, v26.8h
             mls v5.8h, v1.8h, v27.8h
-            mls v5.8h, v0.8h, v28.8h
+            mls v5.8h, v2.8h, v28.8h
             addhn v5.8b, v5.8h, v23.8h
 
             zip1 v3.16b, v3.16b, v5.16b
@@ -593,9 +588,9 @@ void bgr_to_uyvy(const Image &src, const Image &dst)
             ld3 {v0.b, v1.b, v2.b}[0], [%0], #3
             ld3 {v0.b, v1.b, v2.b}[1], [%0], #3
 
-            umull v4.8h, v2.8b, v31.8b
+            umull v4.8h, v0.8b, v31.8b
             umlal v4.8h, v1.8b, v30.8b
-            umlal v4.8h, v0.8b, v29.8b
+            umlal v4.8h, v2.8b, v29.8b
             uqshrn v4.8b, v4.8h, %[shift]
             sub x0, x0, #2
 
@@ -604,14 +599,14 @@ void bgr_to_uyvy(const Image &src, const Image &dst)
             uaddlp v1.4h, v1.8b
             uaddlp v2.4h, v2.8b
 
-            mul v3.8h, v0.8h, v26.8h
-            mls v3.8h, v2.8h, v24.8h
+            mul v3.8h, v2.8h, v26.8h
+            mls v3.8h, v0.8h, v24.8h
             mls v3.8h, v1.8h, v25.8h
             addhn v3.8b, v3.8h, v23.8h
 
-            mul v5.8h, v2.8h, v26.8h
+            mul v5.8h, v0.8h, v26.8h
             mls v5.8h, v1.8h, v27.8h
-            mls v5.8h, v0.8h, v28.8h
+            mls v5.8h, v2.8h, v28.8h
             addhn v5.8b, v5.8h, v23.8h
 
             zip1 v3.16b, v3.16b, v5.16b
@@ -629,7 +624,7 @@ void bgr_to_uyvy(const Image &src, const Image &dst)
         , "v0", "v1", "v2", "v3", "v4", "v5", "v23", USED_YUV_REG);
 }
 
-void bgr_to_i420(const Image &src, const Image &dst)
+void nv12_to_i420(const Image &src, const Image &dst)
 {
     auto w = src.cols();
     auto h = src.rows();
@@ -670,15 +665,15 @@ void bgr_to_i420(const Image &src, const Image &dst)
             ld3 {v0.8b, v1.8b, v2.8b}, [x0], #24
             ld3 {v3.8b, v4.8b, v5.8b}, [x1], #24
 
-            umull v6.8h, v2.8b, v31.8b
+            umull v6.8h, v0.8b, v31.8b
             umlal v6.8h, v1.8b, v30.8b
             prfm pldl1keep, [x0, 448]
-            umlal v6.8h, v0.8b, v29.8b
+            umlal v6.8h, v2.8b, v29.8b
 
-            umull v7.8h, v5.8b, v31.8b
+            umull v7.8h, v3.8b, v31.8b
             umlal v7.8h, v4.8b, v30.8b
             prfm pldl1keep, [x1, 448]
-            umlal v7.8h, v3.8b, v29.8b
+            umlal v7.8h, v5.8b, v29.8b
 
             uqshrn v6.8b, v6.8h, %[shift]
             uqshrn v7.8b, v7.8h, %[shift]
@@ -696,14 +691,14 @@ void bgr_to_i420(const Image &src, const Image &dst)
             ushr v1.4h, v1.4h, #1
             ushr v2.4h, v2.4h, #1
 
-            mul v3.8h, v0.8h, v26.8h
-            mls v3.8h, v2.8h, v24.8h
+            mul v3.8h, v2.8h, v26.8h
+            mls v3.8h, v0.8h, v24.8h
             mls v3.8h, v1.8h, v25.8h
             addhn v3.8b, v3.8h, v23.8h
 
-            mul v4.8h, v2.8h, v26.8h
+            mul v4.8h, v0.8h, v26.8h
             mls v4.8h, v1.8h, v27.8h
-            mls v4.8h, v0.8h, v28.8h
+            mls v4.8h, v2.8h, v28.8h
             addhn v4.8b, v4.8h, v23.8h
 
             st1 {v3.s}[0], [%2], #4
@@ -716,15 +711,15 @@ void bgr_to_i420(const Image &src, const Image &dst)
 
             ld3 {v0.b, v1.b, v2.b}[0], [x0], #3
             ld3 {v0.b, v1.b, v2.b}[1], [x0], #3
-            umull v6.8h, v2.8b, v31.8b
+            umull v6.8h, v0.8b, v31.8b
             umlal v6.8h, v1.8b, v30.8b
-            umlal v6.8h, v0.8b, v29.8b
+            umlal v6.8h, v2.8b, v29.8b
 
             ld3 {v3.b, v4.b, v5.b}[0], [x1], #3
             ld3 {v3.b, v4.b, v5.b}[1], [x1], #3
-            umull v7.8h, v5.8b, v31.8b
+            umull v7.8h, v3.8b, v31.8b
             umlal v7.8h, v4.8b, v30.8b
-            umlal v7.8h, v3.8b, v29.8b
+            umlal v7.8h, v5.8b, v29.8b
 
             sub x5, x5, #2
             uqshrn v6.8b, v6.8h, %[shift]
@@ -743,14 +738,14 @@ void bgr_to_i420(const Image &src, const Image &dst)
             ushr v1.4h, v1.4h, #1
             ushr v2.4h, v2.4h, #1
 
-            mul v3.8h, v0.8h, v26.8h
-            mls v3.8h, v2.8h, v24.8h
+            mul v3.8h, v2.8h, v26.8h
+            mls v3.8h, v0.8h, v24.8h
             mls v3.8h, v1.8h, v25.8h
             addhn v3.8b, v3.8h, v23.8h
 
-            mul v4.8h, v2.8h, v26.8h
+            mul v4.8h, v0.8h, v26.8h
             mls v4.8h, v1.8h, v27.8h
-            mls v4.8h, v0.8h, v28.8h
+            mls v4.8h, v2.8h, v28.8h
             addhn v4.8b, v4.8h, v23.8h
 
             st1 {v3.b}[0], [%2], #1
@@ -766,7 +761,7 @@ void bgr_to_i420(const Image &src, const Image &dst)
         : "cc", "memory", "x0", "x1", "x2", "x3", "x4", "x5", USED_YUV_REG, "v1", "v2", "v3", "v4", "v5", "v6", "v7");
 }
 
-void bgr_to_nv12(const Image &src, const Image &dst)
+void nv12_to_nv12(const Image &src, const Image &dst)
 {
     auto w = src.cols();
     auto h = src.rows();
@@ -806,15 +801,15 @@ void bgr_to_nv12(const Image &src, const Image &dst)
             ld3 {v0.8b, v1.8b, v2.8b}, [x0], #24
             ld3 {v3.8b, v4.8b, v5.8b}, [x1], #24
 
-            umull v6.8h, v2.8b, v31.8b
+            umull v6.8h, v0.8b, v31.8b
             umlal v6.8h, v1.8b, v30.8b
             prfm pldl1keep, [x0, 448]
-            umlal v6.8h, v0.8b, v29.8b
+            umlal v6.8h, v2.8b, v29.8b
 
-            umull v7.8h, v5.8b, v31.8b
+            umull v7.8h, v3.8b, v31.8b
             umlal v7.8h, v4.8b, v30.8b
             prfm pldl1keep, [x1, 448]
-            umlal v7.8h, v3.8b, v29.8b
+            umlal v7.8h, v5.8b, v29.8b
 
             uqshrn v6.8b, v6.8h, %[shift]
             uqshrn v7.8b, v7.8h, %[shift]
@@ -832,14 +827,14 @@ void bgr_to_nv12(const Image &src, const Image &dst)
             ushr v1.4h, v1.4h, #1
             ushr v2.4h, v2.4h, #1
 
-            mul v3.8h, v0.8h, v26.8h
-            mls v3.8h, v2.8h, v24.8h
+            mul v3.8h, v2.8h, v26.8h
+            mls v3.8h, v0.8h, v24.8h
             mls v3.8h, v1.8h, v25.8h
             addhn v3.8b, v3.8h, v23.8h
 
-            mul v4.8h, v2.8h, v26.8h
+            mul v4.8h, v0.8h, v26.8h
             mls v4.8h, v1.8h, v27.8h
-            mls v4.8h, v0.8h, v28.8h
+            mls v4.8h, v2.8h, v28.8h
             addhn v4.8b, v4.8h, v23.8h
 
             zip1 v3.8b, v3.8b, v4.8b
@@ -852,15 +847,15 @@ void bgr_to_nv12(const Image &src, const Image &dst)
 
             ld3 {v0.b, v1.b, v2.b}[0], [x0], #3
             ld3 {v0.b, v1.b, v2.b}[1], [x0], #3
-            umull v6.8h, v2.8b, v31.8b
+            umull v6.8h, v0.8b, v31.8b
             umlal v6.8h, v1.8b, v30.8b
-            umlal v6.8h, v0.8b, v29.8b
+            umlal v6.8h, v2.8b, v29.8b
 
             ld3 {v3.b, v4.b, v5.b}[0], [x1], #3
             ld3 {v3.b, v4.b, v5.b}[1], [x1], #3
-            umull v7.8h, v5.8b, v31.8b
+            umull v7.8h, v3.8b, v31.8b
             umlal v7.8h, v4.8b, v30.8b
-            umlal v7.8h, v3.8b, v29.8b
+            umlal v7.8h, v5.8b, v29.8b
 
             sub x5, x5, #2
             uqshrn v6.8b, v6.8h, %[shift]
@@ -879,14 +874,14 @@ void bgr_to_nv12(const Image &src, const Image &dst)
             ushr v1.4h, v1.4h, #1
             ushr v2.4h, v2.4h, #1
 
-            mul v3.8h, v0.8h, v26.8h
-            mls v3.8h, v2.8h, v24.8h
+            mul v3.8h, v2.8h, v26.8h
+            mls v3.8h, v0.8h, v24.8h
             mls v3.8h, v1.8h, v25.8h
             addhn v3.8b, v3.8h, v23.8h
 
-            mul v4.8h, v2.8h, v26.8h
+            mul v4.8h, v0.8h, v26.8h
             mls v4.8h, v1.8h, v27.8h
-            mls v4.8h, v0.8h, v28.8h
+            mls v4.8h, v2.8h, v28.8h
             addhn v4.8b, v4.8h, v23.8h
 
             zip1 v3.8b, v3.8b, v4.8b
@@ -902,7 +897,7 @@ void bgr_to_nv12(const Image &src, const Image &dst)
         : "cc", "memory", "x0", "x1", "x2", "x3", "x4", "x5", USED_YUV_REG, "v1", "v2", "v3", "v4", "v5", "v6", "v7");
 }
 
-void bgr_to_nv21(const Image &src, const Image &dst)
+void nv12_to_nv21(const Image &src, const Image &dst)
 {
     auto w = src.cols();
     auto h = src.rows();
@@ -942,15 +937,15 @@ void bgr_to_nv21(const Image &src, const Image &dst)
             ld3 {v0.8b, v1.8b, v2.8b}, [x0], #24
             ld3 {v3.8b, v4.8b, v5.8b}, [x1], #24
 
-            umull v6.8h, v2.8b, v31.8b
+            umull v6.8h, v0.8b, v31.8b
             umlal v6.8h, v1.8b, v30.8b
             prfm pldl1keep, [x0, 448]
-            umlal v6.8h, v0.8b, v29.8b
+            umlal v6.8h, v2.8b, v29.8b
 
-            umull v7.8h, v5.8b, v31.8b
+            umull v7.8h, v3.8b, v31.8b
             umlal v7.8h, v4.8b, v30.8b
             prfm pldl1keep, [x1, 448]
-            umlal v7.8h, v3.8b, v29.8b
+            umlal v7.8h, v5.8b, v29.8b
 
             uqshrn v6.8b, v6.8h, %[shift]
             uqshrn v7.8b, v7.8h, %[shift]
@@ -968,14 +963,14 @@ void bgr_to_nv21(const Image &src, const Image &dst)
             ushr v1.4h, v1.4h, #1
             ushr v2.4h, v2.4h, #1
 
-            mul v3.8h, v0.8h, v26.8h
-            mls v3.8h, v2.8h, v24.8h
+            mul v3.8h, v2.8h, v26.8h
+            mls v3.8h, v0.8h, v24.8h
             mls v3.8h, v1.8h, v25.8h
             addhn v3.8b, v3.8h, v23.8h
 
-            mul v4.8h, v2.8h, v26.8h
+            mul v4.8h, v0.8h, v26.8h
             mls v4.8h, v1.8h, v27.8h
-            mls v4.8h, v0.8h, v28.8h
+            mls v4.8h, v2.8h, v28.8h
             addhn v4.8b, v4.8h, v23.8h
 
             zip1 v3.8b, v4.8b, v3.8b
@@ -988,15 +983,15 @@ void bgr_to_nv21(const Image &src, const Image &dst)
 
             ld3 {v0.b, v1.b, v2.b}[0], [x0], #3
             ld3 {v0.b, v1.b, v2.b}[1], [x0], #3
-            umull v6.8h, v2.8b, v31.8b
+            umull v6.8h, v0.8b, v31.8b
             umlal v6.8h, v1.8b, v30.8b
-            umlal v6.8h, v0.8b, v29.8b
+            umlal v6.8h, v2.8b, v29.8b
 
             ld3 {v3.b, v4.b, v5.b}[0], [x1], #3
             ld3 {v3.b, v4.b, v5.b}[1], [x1], #3
-            umull v7.8h, v5.8b, v31.8b
+            umull v7.8h, v3.8b, v31.8b
             umlal v7.8h, v4.8b, v30.8b
-            umlal v7.8h, v3.8b, v29.8b
+            umlal v7.8h, v5.8b, v29.8b
 
             sub x5, x5, #2
             uqshrn v6.8b, v6.8h, %[shift]
@@ -1015,14 +1010,14 @@ void bgr_to_nv21(const Image &src, const Image &dst)
             ushr v1.4h, v1.4h, #1
             ushr v2.4h, v2.4h, #1
 
-            mul v3.8h, v0.8h, v26.8h
-            mls v3.8h, v2.8h, v24.8h
+            mul v3.8h, v2.8h, v26.8h
+            mls v3.8h, v0.8h, v24.8h
             mls v3.8h, v1.8h, v25.8h
             addhn v3.8b, v3.8h, v23.8h
 
-            mul v4.8h, v2.8h, v26.8h
+            mul v4.8h, v0.8h, v26.8h
             mls v4.8h, v1.8h, v27.8h
-            mls v4.8h, v0.8h, v28.8h
+            mls v4.8h, v2.8h, v28.8h
             addhn v4.8b, v4.8h, v23.8h
 
             zip1 v3.8b, v4.8b, v3.8b

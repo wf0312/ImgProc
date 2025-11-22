@@ -149,6 +149,7 @@ int cvtTest(int argc, char **argv) {
         fromBgr(src, dst_type, loop);
         break;
     case ImageFormat::BGRA:
+        fromBgra(src, dst_type, loop);
         break;
     case ImageFormat::YUYV:
         fromYuyv(src, dst_type, loop);
@@ -157,10 +158,13 @@ int cvtTest(int argc, char **argv) {
         fromUyvy(src, dst_type, loop);
         break;
     case ImageFormat::I420:
+        fromI420(src, dst_type, loop);
         break;
     case ImageFormat::NV12:
+        fromNv12(src, dst_type, loop);
         break;
     case ImageFormat::NV21:
+        fromNv21(src, dst_type, loop);
         break;
     default:
         break;

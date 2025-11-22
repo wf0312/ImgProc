@@ -7,7 +7,7 @@
 NAMESPACE_BEGIN
 
 constexpr int64_t k_pixel_size = 4L;
-
+constexpr int64_t k_double_pixel_size = k_pixel_size << 1;
 void rgba_to_gray_c(const Image &src, const Image &dst)
 {
     auto size = src.size();
@@ -74,7 +74,7 @@ void rgba_to_yuyv_c(const Image &src, const Image &dst)
     auto dst_buf = dst.data();
 
     constexpr auto k_offset = 1U << k_shift;
-    for (auto i = 0L, j = 0L; i + 8 < size; i += 8, j += 4) {
+    for (auto i = 0L, j = 0L; i + k_double_pixel_size < size; i += k_double_pixel_size, j += 4) {
         auto y0 = (src_buf[i + 0] * k_rgb_2_yuv.m_yr + src_buf[i + 1] * k_rgb_2_yuv.m_yg + src_buf[i + 2] * k_rgb_2_yuv.m_yb) >> k_shift;
         auto y1 = (src_buf[i + 4] * k_rgb_2_yuv.m_yr + src_buf[i + 5] * k_rgb_2_yuv.m_yg + src_buf[i + 6] * k_rgb_2_yuv.m_yb) >> k_shift;
         auto u0 = (src_buf[i + 2] * k_rgb_2_yuv.m_ub - src_buf[i + 0] * k_rgb_2_yuv.m_ur - src_buf[i + 1] * k_rgb_2_yuv.m_ug) >> k_shift;
@@ -96,7 +96,7 @@ void rgba_to_uyvy_c(const Image &src, const Image &dst)
     auto dst_buf = dst.data();
     constexpr auto k_offset = 1U << k_shift;
 
-    for (auto i = 0L, j = 0L; i + 8 < size; i += 8, j += 4) {
+    for (auto i = 0L, j = 0L; i + k_double_pixel_size < size; i += k_double_pixel_size, j += 4) {
         auto y0 = (src_buf[i + 0] * k_rgb_2_yuv.m_yr + src_buf[i + 1] * k_rgb_2_yuv.m_yg + src_buf[i + 2] * k_rgb_2_yuv.m_yb) >> k_shift;
         auto y1 = (src_buf[i + 4] * k_rgb_2_yuv.m_yr + src_buf[i + 5] * k_rgb_2_yuv.m_yg + src_buf[i + 6] * k_rgb_2_yuv.m_yb) >> k_shift;
         auto u0 = (src_buf[i + 2] * k_rgb_2_yuv.m_ub - src_buf[i + 0] * k_rgb_2_yuv.m_ur - src_buf[i + 1] * k_rgb_2_yuv.m_ug) >> k_shift;
@@ -139,7 +139,7 @@ void rgba_to_i420_c(const Image &src, const Image &dst)
     constexpr auto k_offset        = 1U << k_shift;
 
     for (int32_t i = 0; i + 2 < h; i += 2) {
-        for (int64_t j = 0, k = 0; j + 8 < ss; j += 8, k += 2) {
+        for (int64_t j = 0, k = 0; j + k_double_pixel_size < ss; j += k_double_pixel_size, k += 2) {
             auto y00 = (src0[j + 0] * k_rgb_2_yuv.m_yr + src0[j + 1] * k_rgb_2_yuv.m_yg + src0[j + 2] * k_rgb_2_yuv.m_yb) >> k_shift;
             auto y01 = (src0[j + 4] * k_rgb_2_yuv.m_yr + src0[j + 5] * k_rgb_2_yuv.m_yg + src0[j + 6] * k_rgb_2_yuv.m_yb) >> k_shift;
             auto y10 = (src1[j + 0] * k_rgb_2_yuv.m_yr + src1[j + 1] * k_rgb_2_yuv.m_yg + src1[j + 2] * k_rgb_2_yuv.m_yb) >> k_shift;
@@ -196,7 +196,7 @@ void rgba_to_nv12_c(const Image &src, const Image &dst)
     constexpr auto k_offset        = 1U << k_shift;
 
     for (int32_t i = 0; i + 2 < h; i += 2) {
-        for (int64_t j = 0, k = 0; j + 8 < ss; j += 8, k += 2) {
+        for (int64_t j = 0, k = 0; j + k_double_pixel_size < ss; j += k_double_pixel_size, k += 2) {
             auto y00 = (src0[j + 0] * k_rgb_2_yuv.m_yr + src0[j + 1] * k_rgb_2_yuv.m_yg + src0[j + 2] * k_rgb_2_yuv.m_yb) >> k_shift;
             auto y01 = (src0[j + 4] * k_rgb_2_yuv.m_yr + src0[j + 5] * k_rgb_2_yuv.m_yg + src0[j + 6] * k_rgb_2_yuv.m_yb) >> k_shift;
             auto y10 = (src1[j + 0] * k_rgb_2_yuv.m_yr + src1[j + 1] * k_rgb_2_yuv.m_yg + src1[j + 2] * k_rgb_2_yuv.m_yb) >> k_shift;
@@ -252,7 +252,7 @@ void rgba_to_nv21_c(const Image &src, const Image &dst)
     constexpr auto k_offset = 1U << k_shift;
 
     for (int32_t i = 0; i + 2 < h; i += 2) {
-        for (int64_t j = 0, k = 0; j + 8 < ss; j += 8, k += 2) {
+        for (int64_t j = 0, k = 0; j + k_double_pixel_size < ss; j += k_double_pixel_size, k += 2) {
             auto y00 = (src0[j + 0] * k_rgb_2_yuv.m_yr + src0[j + 1] * k_rgb_2_yuv.m_yg + src0[j + 2] * k_rgb_2_yuv.m_yb) >> k_shift;
             auto y01 = (src0[j + 4] * k_rgb_2_yuv.m_yr + src0[j + 5] * k_rgb_2_yuv.m_yg + src0[j + 6] * k_rgb_2_yuv.m_yb) >> k_shift;
             auto y10 = (src1[j + 0] * k_rgb_2_yuv.m_yr + src1[j + 1] * k_rgb_2_yuv.m_yg + src1[j + 2] * k_rgb_2_yuv.m_yb) >> k_shift;

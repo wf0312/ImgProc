@@ -134,6 +134,30 @@ static const std::array<std::array<CvtFuncStruct, getValueOf(ImageFormat::END)>,
 void fromGray(const Image& src, uint32_t dst_type, uint32_t loop) {
 }
 void fromBgra(const Image& src, uint32_t dst_type, uint32_t loop) {
+    LOGD("From Bgra");
+    const auto src_fmt = ImageFormat::BGRA;
+    auto src_idx       = static_cast<uint32_t>(src_fmt);
+    const auto& src_type_name = getImgFmtName(src_fmt);
+    for (auto i = 0U; i < getValueOf(ImageFormat::END); ++i) {
+        if (0 != (dst_type & (1 << i))) {
+            auto img_fmt = static_cast<ImageFormat>(i);
+            Image dst;
+            dst.create(src.rows(), src.cols(), img_fmt);
+            auto name  = format2str(k_cvt_name_fmt, src_type_name, getImgFmtName(img_fmt), src.cols(), src.rows());
+            auto cost0 = doTest({name, [&src, &dst, src_idx, i]() {
+                                     g_cvt_func[src_idx][i].m_func_c(src, dst);  // NOLINT
+                                 },
+                                 dst.data(), dst.size()},
+                                loop);
+            name       = format2str(k_asm_name_fmt, name);
+            auto cost1 = doTest({name, [&src, &dst, src_idx, i]() {
+                                    g_cvt_func[src_idx][i].m_func(src, dst);  // NOLINT
+                                 },
+                                 dst.data(), dst.size()},
+                                loop);
+            LOGD("{} speed up {} times\n", name, cost0 / cost1);
+        }
+    }
 }
 void fromBgr(const Image& src, uint32_t dst_type, uint32_t loop) {
     LOGD("From Bgr");

@@ -88,7 +88,7 @@ class ResizeBuffer {
             return buff_.data() + (sizeof(int32_t) * stride_);
         }
         int32_t *getStart() {
-            return reinterpret_cast<int32_t*>(buff_.data());
+            return reinterpret_cast<int32_t*>(buff_.data());    // NOLINT
         }
     private:
         int32_t stride_{0};

@@ -51,7 +51,6 @@ static int32_t getInt(const std::string& str)
 }
 
 int resizeTest(int argc, char **argv) {
-    /*
     auto bin = std::string(argv[0]);
     auto color_pos = bin.find('_');
     if (std::string::npos == color_pos) {
@@ -92,7 +91,6 @@ int resizeTest(int argc, char **argv) {
 
     resize(src, dst);
     writeDstFile(format2str("gray_rgb_{}_{}", dst_w, dst_h), dst.data(), dst.size());
-*/
     return 0;
 }
 

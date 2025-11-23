@@ -27,9 +27,9 @@ constexpr auto getValueOf(T t)
     return static_cast<U>(t);
 }
 
-constexpr uint8_t saturate_u8(int32_t value)
+constexpr uint8_t saturate_u8(int64_t value)
 {
-    return static_cast<uint8_t>(std::min(std::max(value, 0), 255));
+    return static_cast<uint8_t>(std::min(std::max(value, 0L), 255L));
 }
 
 NAMESPACE_END

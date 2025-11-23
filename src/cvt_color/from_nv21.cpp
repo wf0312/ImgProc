@@ -436,10 +436,8 @@ void nv21_to_rgba(const Image &src, const Image &dst)
             ushll2 v3.8h, v2.16b, %[shift]
             ushll v2.8h, v2.8b, %[shift]
 
-            ld1 {v4.16b}, [x2], #16
-            ext v5.16b, v4.16b, v4.16b, #1
-            uzp1 v5.16b, v4.16b, v5.16b
-            mov v4.d[0], v5.d[1]
+            ld2 {v5.8b, v6.8b}, [x2], #16
+            mov v4.16b, v6.16b
             zip1 v4.16b, v4.16b, v4.16b
             zip1 v5.16b, v5.16b, v5.16b
             prfm pldl1keep, [x0, 448]
@@ -528,10 +526,9 @@ void nv21_to_rgba(const Image &src, const Image &dst)
             ushll2 v3.8h, v2.16b, %[shift]
             ushll v2.8h, v2.8b, %[shift]
 
-            ld1 {v4.h}[0], [x2], #2
-            ext v5.16b, v4.16b, v4.16b, #1
-            uzp1 v5.16b, v4.16b, v5.16b
-            mov v4.d[0], v5.d[1]
+            ld2 {v5.b, v6.b}[0], [x2], #2
+            ld2 {v5.b, v6.b}[1], [x2], #2
+            mov v4.16b, v6.16b
             zip1 v4.16b, v4.16b, v4.16b
             zip1 v5.16b, v5.16b, v5.16b
 
@@ -645,10 +642,8 @@ void nv21_to_rgb(const Image &src, const Image &dst)
             ushll2 v3.8h, v2.16b, %[shift]
             ushll v2.8h, v2.8b, %[shift]
 
-            ld1 {v4.16b}, [x2], #16
-            ext v5.16b, v4.16b, v4.16b, #1
-            uzp1 v5.16b, v4.16b, v5.16b
-            mov v4.d[0], v5.d[1]
+            ld2 {v5.8b, v6.8b}, [x2], #16
+            mov v4.16b, v6.16b
             zip1 v4.16b, v4.16b, v4.16b
             zip1 v5.16b, v5.16b, v5.16b
             prfm pldl1keep, [x0, 448]
@@ -737,9 +732,9 @@ void nv21_to_rgb(const Image &src, const Image &dst)
             ushll2 v3.8h, v2.16b, %[shift]
             ushll v2.8h, v2.8b, %[shift]
 
-            ld1 {v4.h}[0], [x2], #2
-            uzp1 v5.16b, v4.16b, v4.16b
-            mov v4.d[0], v5.d[1]
+            ld2 {v5.b, v6.b}[0], [x2], #2
+            ld2 {v5.b, v6.b}[1], [x2], #2
+            mov v4.16b, v6.16b
             zip1 v4.16b, v4.16b, v4.16b
             zip1 v5.16b, v5.16b, v5.16b
 
@@ -853,10 +848,8 @@ void nv21_to_bgr(const Image &src, const Image &dst)
             ushll2 v3.8h, v2.16b, %[shift]
             ushll v2.8h, v2.8b, %[shift]
 
-            ld1 {v4.16b}, [x2], #16
-            ext v5.16b, v4.16b, v4.16b, #1
-            uzp1 v5.16b, v4.16b, v5.16b
-            mov v4.d[0], v5.d[1]
+            ld2 {v5.8b, v6.8b}, [x2], #16
+            mov v4.16b, v6.16b
             zip1 v4.16b, v4.16b, v4.16b
             zip1 v5.16b, v5.16b, v5.16b
             prfm pldl1keep, [x0, 448]
@@ -945,9 +938,9 @@ void nv21_to_bgr(const Image &src, const Image &dst)
             ushll2 v3.8h, v2.16b, %[shift]
             ushll v2.8h, v2.8b, %[shift]
 
-            ld1 {v4.h}[0], [x2], #2
-            uzp1 v5.16b, v4.16b, v4.16b
-            mov v4.d[0], v5.d[1]
+            ld2 {v5.b, v6.b}[0], [x2], #2
+            ld2 {v5.b, v6.b}[1], [x2], #2
+            mov v4.16b, v6.16b
             zip1 v4.16b, v4.16b, v4.16b
             zip1 v5.16b, v5.16b, v5.16b
 
@@ -1062,10 +1055,8 @@ void nv21_to_bgra(const Image &src, const Image &dst)
             ushll2 v3.8h, v2.16b, %[shift]
             ushll v2.8h, v2.8b, %[shift]
 
-            ld1 {v4.16b}, [x2], #16
-            ext v5.16b, v4.16b, v4.16b, #1
-            uzp1 v5.16b, v4.16b, v5.16b
-            mov v4.d[0], v5.d[1]
+            ld2 {v5.8b, v6.8b}, [x2], #16
+            mov v4.16b, v6.16b
             zip1 v4.16b, v4.16b, v4.16b
             zip1 v5.16b, v5.16b, v5.16b
             prfm pldl1keep, [x0, #448]
@@ -1154,10 +1145,9 @@ void nv21_to_bgra(const Image &src, const Image &dst)
             ushll2 v3.8h, v2.16b, %[shift]
             ushll v2.8h, v2.8b, %[shift]
 
-            ld1 {v4.h}[0], [x2], #2
-            ext v5.16b, v4.16b, v4.16b, #1
-            uzp1 v5.16b, v4.16b, v5.16b
-            mov v4.d[0], v5.d[1]
+            ld2 {v5.b, v6.b}[0], [x2], #2
+            ld2 {v5.b, v6.b}[1], [x2], #2
+            mov v4.16b, v6.16b
             zip1 v4.16b, v4.16b, v4.16b
             zip1 v5.16b, v5.16b, v5.16b
 

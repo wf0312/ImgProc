@@ -609,7 +609,7 @@ void nv21_to_rgba(const Image &src, const Image &dst)
         , [h]"r"(1L * src.rows()), [w]"r"(1L * src.cols()), [ds]"r"(dst.stride())
         , [param]"r"(&k_yuv_2_rgb), [alpha] "I"(k_alpha), [shift]"I"(k_shift)
         : "cc", "memory", "x0", "x1", "x2", "x3", "x4", "x5", "x6"
-        , "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9");
+        , "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", USED_RGB_REG);
 }
 
 void nv21_to_rgb(const Image &src, const Image &dst)
@@ -815,7 +815,7 @@ void nv21_to_rgb(const Image &src, const Image &dst)
         , [h]"r"(1L * src.rows()), [w]"r"(1L * src.cols()), [ds]"r"(dst.stride())
         , [param]"r"(&k_yuv_2_rgb), [shift]"I"(k_shift)
         : "cc", "memory", "x0", "x1", "x2", "x3", "x4", "x5", "x6"
-        , "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9");
+        , "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", USED_RGB_REG);
 }
 
 void nv21_to_bgr(const Image &src, const Image &dst)
@@ -1021,7 +1021,7 @@ void nv21_to_bgr(const Image &src, const Image &dst)
         , [h]"r"(1L * src.rows()), [w]"r"(1L * src.cols()), [ds]"r"(dst.stride())
         , [param]"r"(&k_yuv_2_rgb), [shift]"I"(k_shift)
         : "cc", "memory", "x0", "x1", "x2", "x3", "x4", "x5", "x6"
-        , "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9");
+        , "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", USED_RGB_REG);
 }
 
 void nv21_to_bgra(const Image &src, const Image &dst)
@@ -1228,7 +1228,7 @@ void nv21_to_bgra(const Image &src, const Image &dst)
         , [h]"r"(1L * src.rows()), [w]"r"(1L * src.cols()), [ds]"r"(dst.stride())
         , [param]"r"(&k_yuv_2_rgb), [alpha]"I"(k_alpha), [shift]"I"(k_shift)
         : "cc", "memory", "x0", "x1", "x2", "x3", "x4", "x5", "x6"
-        , "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9");
+        , "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", USED_RGB_REG);
 }
 
 void nv21_to_yuyv(const Image &src, const Image &dst)

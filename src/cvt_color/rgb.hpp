@@ -19,10 +19,6 @@ static const struct Rgb2YuvParam {  // NOLINT
     uint16_t m_vb = 10;    // -
 } k_rgb_2_yuv{};
 
-static const uint8_t k_tbl_idx[] = {
-    0, 16, 1, 17, 2, 18, 3, 19,
-    4, 20, 5, 21, 6, 22, 7, 23};
-
 #define LOAD_Y_PARAM                                        \
     "mov x0, #4 \n"                                         \
     "ld3r {v29.16b, v30.16b, v31.16b}, [%[param]], x0   \n"

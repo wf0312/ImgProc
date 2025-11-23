@@ -360,7 +360,7 @@ void yuyv_to_rgb(const Image& src, const Image& dst)
         : "r"(src.data()), "r"(src.pixels()), "r"(dst.data())
         , [param] "r"(&k_yuv_2_rgb), [shift] "i"(k_shift)
         : "cc", "memory", "x0"
-        , "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v25", "v26", "v27", "v28", "v29", "v30", "v31");
+        , "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", USED_RGB_REG);
 }
 
 void yuyv_to_rgba(const Image& src, const Image& dst)
@@ -457,7 +457,7 @@ void yuyv_to_rgba(const Image& src, const Image& dst)
         : "r"(src.data()), "r"(src.pixels()), "r"(dst.data())
         , [param] "r"(&k_yuv_2_rgb), [shift] "i"(k_shift), [alpha] "i"(k_alpha)
         : "cc", "memory", "x0"
-        , "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v25", "v26", "v27", "v28", "v29", "v30", "v31");
+        , "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", USED_RGB_REG);
 }
 
 void yuyv_to_bgr(const Image& src, const Image& dst)
@@ -554,7 +554,7 @@ void yuyv_to_bgr(const Image& src, const Image& dst)
         : "r"(src.data()), "r"(src.pixels()), "r"(dst.data())
         , [param] "r"(&k_yuv_2_rgb), [shift] "i"(k_shift)
         : "cc", "memory", "x0"
-        , "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v25", "v26", "v27", "v28", "v29", "v30", "v31");
+        , "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", USED_RGB_REG);
 }
 
 void yuyv_to_bgra(const Image& src, const Image& dst)
@@ -652,7 +652,8 @@ void yuyv_to_bgra(const Image& src, const Image& dst)
         :
         : "r"(src.data()), "r"(src.pixels()), "r"(dst.data())
         , [param] "r"(&k_yuv_2_rgb), [shift] "i"(k_shift), [alpha] "i"(k_alpha)
-        : "cc", "memory", "x0", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v25", "v26", "v27", "v28", "v29", "v30", "v31");
+        : "cc", "memory", "x0"
+        , "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", USED_RGB_REG);
 }
 
 void yuyv_to_yuyv(const Image& src, const Image& dst)

@@ -81,15 +81,15 @@ int resizeTest(int argc, char **argv) {
     readSrcFile(argv[0], src.data(), src.size());
     auto scale_w = std::stof(argv[1]);
     auto scale_h = std::stof(argv[2]);
-    auto dst_w = static_cast<int32_t>(scale_w * w);
-    auto dst_h = static_cast<int32_t>(scale_h * h);
+    auto dst_w = static_cast<int32_t>(scale_w * static_cast<float>(w));
+    auto dst_h = static_cast<int32_t>(scale_h * static_cast<float>(h));
     Image dst{dst_h, dst_w, src_type};
 
     LOGD("From {}x{} --> {}x{}", w, h, dst_w, dst_h);
 
     int32_t loop = argc > 3 ? std::stoi(argv[2]) : 1;
 
-    resize(src, dst);
+    // resize(src, dst);
     writeDstFile(format2str("gray_rgb_{}_{}", dst_w, dst_h), dst.data(), dst.size());
     return 0;
 }

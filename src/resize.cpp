@@ -1,3 +1,4 @@
+#include "resize.hpp"
 #include "types.hpp"
 #include <cmath>
 #include <cstddef>
@@ -8,91 +9,101 @@ NAMESPACE_BEGIN
 
 constexpr uint8_t k_shift = 7;
 
-#define R_ST3_LAN1_OFS(REG, D0, D1, D2)                     \
-    "st3 {"#D0".b, "#D1".b, "#D2".b}[0], ["#REG"], #3   \n"
+#define ST3_LAN1_OFS(REG, D0, D1, D2)                     \
+    "st3 {"#D0".b, "#D1".b, "#D2".b}[0], ["#REG"], #3 \n"
 
-#define R_ST3_LAN2_OFS(REG, D0, D1, D2)                     \
-    "st3 {"#D0".b, "#D1".b, "#D2".b}[0], ["#REG"], #3   \n" \
-    "st3 {"#D0".b, "#D1".b, "#D2".b}[1], ["#REG"], #3   \n"
+#define ST3_LAN2_OFS(REG, D0, D1, D2)                     \
+    "st3 {"#D0".b, "#D1".b, "#D2".b}[0], ["#REG"], #3 \n" \
+    "st3 {"#D0".b, "#D1".b, "#D2".b}[1], ["#REG"], #3 \n"
 
-#define R_ST3_LAN4_OFS(REG, D0, D1, D2)                     \
-    R_ST3_LAN2_OFS(REG, D0, D1, D2)                         \
-    "st3 {"#D0".b, "#D1".b, "#D2".b}[2], ["#REG"], #3   \n" \
-    "st3 {"#D0".b, "#D1".b, "#D2".b}[3], ["#REG"], #3   \n"
+#define ST3_LAN4_OFS(REG, D0, D1, D2)                     \
+    ST3_LAN2_OFS(REG, D0, D1, D2)                         \
+    "st3 {"#D0".b, "#D1".b, "#D2".b}[2], ["#REG"], #3 \n" \
+    "st3 {"#D0".b, "#D1".b, "#D2".b}[3], ["#REG"], #3 \n"
 
-#define R_ST3_LAN1(REG, D0, D1, D2)                         \
-    "st3 {"#D0".b, "#D1".b, "#D2".b}[0], ["#REG"]       \n"
+#define ST3_LAN1(REG, D0, D1, D2)                         \
+    "st3 {"#D0".b, "#D1".b, "#D2".b}[0], ["#REG"]     \n"
 
-#define R_ST3_LAN2(REG, D0, D1, D2)                         \
-    "st3 {"#D0".b, "#D1".b, "#D2".b}[0], ["#REG"]       \n" \
-    "st3 {"#D0".b, "#D1".b, "#D2".b}[1], ["#REG"]       \n"
+#define ST3_LAN2(REG, D0, D1, D2)                         \
+    "st3 {"#D0".b, "#D1".b, "#D2".b}[0], ["#REG"]     \n" \
+    "st3 {"#D0".b, "#D1".b, "#D2".b}[1], ["#REG"]     \n"
 
-#define R_ST3_LAN4(REG, D0, D1, D2)                         \
-    R_ST3_LAN2(REG, D0, D1, D2)                             \
-    "st3 {"#D0".b, "#D1".b, "#D2".b}[2], ["#REG"]       \n" \
-    "st3 {"#D0".b, "#D1".b, "#D2".b}[3], ["#REG"]       \n"
+#define ST3_LAN4(REG, D0, D1, D2)                         \
+    ST3_LAN2(REG, D0, D1, D2)                             \
+    "st3 {"#D0".b, "#D1".b, "#D2".b}[2], ["#REG"]     \n" \
+    "st3 {"#D0".b, "#D1".b, "#D2".b}[3], ["#REG"]     \n"
 
-#define R_LD3_LAN1_OFS(REG, D0, D1, D2)                     \
-    "ld3 {"#D0".b, "#D1".b, "#D2".b}[0], ["#REG"], #3   \n"
+#define LD3_LAN1_OFS(REG, D0, D1, D2)                     \
+    "ld3 {"#D0".b, "#D1".b, "#D2".b}[0], ["#REG"], #3 \n"
 
-#define R_LD3_LAN2_OFS(REG, D0, D1, D2)                     \
-    "ld3 {"#D0".b, "#D1".b, "#D2".b}[0], ["#REG"], #3   \n" \
-    "ld3 {"#D0".b, "#D1".b, "#D2".b}[1], ["#REG"], #3   \n"
+#define LD3_LAN2_OFS(REG, D0, D1, D2)                     \
+    "ld3 {"#D0".b, "#D1".b, "#D2".b}[0], ["#REG"], #3 \n" \
+    "ld3 {"#D0".b, "#D1".b, "#D2".b}[1], ["#REG"], #3 \n"
 
-#define R_LD3_LAN4_OFS(REG, D0, D1, D2)                     \
-    R_LD3_LAN2_OFS(REG, D0, D1, D2)                         \
-    "ld3 {"#D0".b, "#D1".b, "#D2".b}[2], ["#REG"], #3   \n" \
-    "ld3 {"#D0".b, "#D1".b, "#D2".b}[3], ["#REG"], #3   \n"
+#define LD3_LAN4_OFS(REG, D0, D1, D2)                     \
+    LD3_LAN2_OFS(REG, D0, D1, D2)                         \
+    "ld3 {"#D0".b, "#D1".b, "#D2".b}[2], ["#REG"], #3 \n" \
+    "ld3 {"#D0".b, "#D1".b, "#D2".b}[3], ["#REG"], #3 \n"
 
-#define R_LD3_LAN1(REG, D0, D1, D2)                         \
-    "ld3 {"#D0".b, "#D1".b, "#D2".b}[0], ["#REG"]       \n"
+#define LD3_LAN1(REG, D0, D1, D2)                         \
+    "ld3 {"#D0".b, "#D1".b, "#D2".b}[0], ["#REG"]     \n"
 
-#define R_LD3_LAN2(REG, D0, D1, D2)                         \
-    "ld3 {"#D0".b, "#D1".b, "#D2".b}[0], ["#REG"]       \n" \
-    "ld3 {"#D0".b, "#D1".b, "#D2".b}[1], ["#REG"]       \n"
+#define LD3_LAN2(REG, D0, D1, D2)                         \
+    "ld3 {"#D0".b, "#D1".b, "#D2".b}[0], ["#REG"]     \n" \
+    "ld3 {"#D0".b, "#D1".b, "#D2".b}[1], ["#REG"]     \n"
 
-#define R_LD3_LAN4(REG, D0, D1, D2)                         \
-    R_LD3_LAN2(REG, D0, D1, D2)                             \
-    "ld3 {"#D0".b, "#D1".b, "#D2".b}[2], ["#REG"]       \n" \
-    "ld3 {"#D0".b, "#D1".b, "#D2".b}[3], ["#REG"]       \n"
+#define LD3_LAN4(REG, D0, D1, D2)                         \
+    LD3_LAN2(REG, D0, D1, D2)                             \
+    "ld3 {"#D0".b, "#D1".b, "#D2".b}[2], ["#REG"]     \n" \
+    "ld3 {"#D0".b, "#D1".b, "#D2".b}[3], ["#REG"]     \n"
 
-#define R_MUL(S0, S1, A0, A1)                               \
-    "umull "#S0".8h, "#S0".8b, "#A0".8b                 \n" \
-    "umlal "#S0".8h, "#S1".8b, "#A1".8b                 \n" \
-    "uqrshrn "#S0".8b, "#S0".8h, %[shift]               \n"
+#define MUL(S0, S1, A0, A1)                               \
+    "umull "#S0".8h, "#S0".8b, "#A0".8b               \n" \
+    "umlal "#S0".8h, "#S1".8b, "#A1".8b               \n" \
+    "uqrshrn "#S0".8b, "#S0".8h, %[shift]             \n"
 
-#define R_ADDLP(V)                                          \
-    "uaddlp "#V".8h, "#V".16b                           \n" \
-    "uqrshrn "#V".8b, "#V".8h, #1                       \n"
+#define ADDLP(V)                                          \
+    "uaddlp "#V".8h, "#V".16b                         \n" \
+    "uqrshrn "#V".8b, "#V".8h, #1                     \n"
 
 class ResizeBuffer {
-    public:
-        ResizeBuffer(int32_t src, int32_t dst, int32_t channel = 1)
-            : stride_{dst * channel}
-            , buff_((1L + sizeof(int32_t)) * dst, 0)
-        {
-            constexpr auto scale = 1U << k_shift;
-            auto param = getParam();
-            auto start = getStart();
-            auto scale_d = static_cast<double>(src) / dst;
+ public:
+    ResizeBuffer(ResizeParam param, int32_t src, int32_t dst, int32_t channel = 1)
+        : stride_{dst * channel}
+        , buff_((1L + sizeof(int32_t)) * dst, 0)
+    {
+        constexpr auto scale = 1U << k_shift;
+        auto param_buf = getParam();
+        auto start_buf = getStart();
+        auto scale_d = static_cast<double>(src) / dst;
+        if (param.m_half_pixel) {
             for (int32_t i = 0; i < dst; ++i) {
-                auto src_f = i * scale_d;
-                auto src_floor = std::min(src - 2, std::max(0, static_cast<int32_t>(std::floor(src_f))));
-                auto diff = static_cast<decltype(scale)>(scale * (src_f - src_floor));
-                param[i] = scale - diff;
-                start[i] = src_floor * channel;
+                auto src_f = ((static_cast<double>(i) + 0.5F) * scale_d) - 0.5F;
+                auto src_floor = static_cast<int32_t>(std::floor(src_f));
+                auto alpha = static_cast<decltype(scale)>(scale * (src_f - src_floor));
+                if (src_floor < 0) {
+                    src_floor = 0;
+                    alpha = 0;
+                } else if (src_floor >= src - 1) {
+                    src_floor = src - 2;
+                    alpha = scale;
+                }
+                param_buf[i] = scale - alpha;
+                start_buf[i] = src_floor * channel;
             }
-        }
+        } else if (param.m_align_corner) {}
+    }
 
-        uint8_t *getParam() {
-            return buff_.data() + (sizeof(int32_t) * stride_);
-        }
-        int32_t *getStart() {
-            return reinterpret_cast<int32_t*>(buff_.data());    // NOLINT
-        }
-    private:
-        int32_t stride_{0};
-        std::vector<uint8_t> buff_;
+    uint8_t *getParam() {
+        return buff_.data() + (sizeof(int32_t) * stride_);
+    }
+
+    int32_t *getStart() {
+        return reinterpret_cast<int32_t*>(buff_.data());    // NOLINT
+    }
+ private:
+    int32_t stride_{0};
+    std::vector<uint8_t> buff_;
 };
 /*
 
@@ -281,7 +292,7 @@ void resize_comm_c1(const Image& src, const Image &dst) {
 }
 */
 
-static void resize_dn2_c1(const Image& src, const Image &dst) {
+static void resize_dn2_c1(const Image& src, const Image &dst, ResizeParam param) {
     // clang-format off
 
     asm volatile(
@@ -318,21 +329,21 @@ static void resize_dn2_c1(const Image& src, const Image &dst) {
         "       cmp x3, #4                              \n" \
         "       blt RDN2_C1_W2                          \n" \
         "       ld1 {v0.8b}, [x0], #8                   \n" \
-                R_ADDLP(v0)                                 \
+                ADDLP(v0)                                 \
         "       st1 {v0.s}[0], [%1], #4                 \n" \
         "       sub x3, x3, #4                          \n" \
         "   RDN2_C1_W2:                                 \n" \
         "       cmp x3, #2                              \n" \
         "       blt RDN2_C1_W1                          \n" \
         "       ld1 {v0.s}[0], [x0], #4                 \n" \
-                R_ADDLP(v0)                                 \
+                ADDLP(v0)                                 \
         "       st1 {v0.h}[0], [%1], #2                 \n" \
         "       sub x3, x3, #2                          \n" \
         "   RDN2_C1_W1:                                 \n" \
         "       cmp x3, #1                              \n" \
         "       blt RDN2_C1_H_PRE                       \n" \
         "       ld1 {v0.h}[0], [x0], #2                 \n" \
-                R_ADDLP(v0)                                 \
+                ADDLP(v0)                                 \
         "       st1 {v0.b}[0], [%1], #1                 \n" \
         "   blt RDN2_C1_H_PRE                           \n" \
         "RDN2_C1_END:                                   \n"
@@ -342,7 +353,7 @@ static void resize_dn2_c1(const Image& src, const Image &dst) {
     );
 }
 
-static void resize_dn2_c3(const Image& src, const Image &dst) {
+static void resize_dn2_c3(const Image& src, const Image &dst, ResizeParam param) {
     // clang-format off
 
     asm volatile(
@@ -368,15 +379,15 @@ static void resize_dn2_c3(const Image& src, const Image &dst) {
         "   RDN2_C3_W8:                                    \n" \
         "       subs x3, x3, #8                         \n" \
         "       ld3 {v3.16b, v4.16b, v5.16b}, [x1], #48 \n" \
-                R_ADDLP(v3)                                 \
-                R_ADDLP(v4)                                 \
+                ADDLP(v3)                                 \
+                ADDLP(v4)                                 \
         "       ld3 {v0.16b, v1.16b, v2.16b}, [x0], #48 \n" \
-                R_ADDLP(v5)                                 \
-                R_ADDLP(v0)                                 \
+                ADDLP(v5)                                 \
+                ADDLP(v0)                                 \
         "       urhadd v0.8b, v0.8b, v3.8b              \n" \
-                R_ADDLP(v1)                                 \
+                ADDLP(v1)                                 \
         "       urhadd v1.8b, v1.8b, v4.8b              \n" \
-                R_ADDLP(v2)                                 \
+                ADDLP(v2)                                 \
         "       urhadd v2.8b, v2.8b, v5.8b              \n" \
         "       st3 {v0.8b, v1.8b, v2.8b}, [%1], #24    \n" \
         "       bgt RDN2_C3_W8                             \n" \
@@ -384,49 +395,49 @@ static void resize_dn2_c3(const Image& src, const Image &dst) {
         "       cmp x4, #4                              \n" \
         "       blt RDN2_C3_W2                             \n" \
         "       ld3 {v3.8b, v4.8b, v5.8b}, [x1], #24    \n" \
-                R_ADDLP(v3)                                 \
-                R_ADDLP(v4)                                 \
+                ADDLP(v3)                                 \
+                ADDLP(v4)                                 \
         "       ld3 {v0.8b, v1.8b, v2.8b}, [x0], #24    \n" \
-                R_ADDLP(v5)                                 \
-                R_ADDLP(v0)                                 \
+                ADDLP(v5)                                 \
+                ADDLP(v0)                                 \
         "       urhadd v0.8b, v0.8b, v3.8b              \n" \
-                R_ADDLP(v1)                                 \
+                ADDLP(v1)                                 \
         "       urhadd v1.8b, v1.8b, v4.8b              \n" \
-                R_ADDLP(v2)                                 \
+                ADDLP(v2)                                 \
         "       urhadd v2.8b, v2.8b, v5.8b              \n" \
-                R_ST3_LAN4_OFS(%1, v0, v1, v2)               \
+                ST3_LAN4_OFS(%1, v0, v1, v2)               \
         "       sub x4, x4, #4                          \n" \
         "   RDN2_C3_W2:                                    \n" \
         "       cmp x4, #2                              \n" \
         "       blt RDN2_C3_W1                             \n" \
-                R_LD3_LAN4_OFS(x1, v3, v4, v5)               \
-                R_ADDLP(v3)                                 \
-                R_ADDLP(v4)                                 \
-                R_LD3_LAN4_OFS(x0, v0, v1, v2)               \
-                R_ADDLP(v5)                                 \
-                R_ADDLP(v0)                                 \
+                LD3_LAN4_OFS(x1, v3, v4, v5)               \
+                ADDLP(v3)                                 \
+                ADDLP(v4)                                 \
+                LD3_LAN4_OFS(x0, v0, v1, v2)               \
+                ADDLP(v5)                                 \
+                ADDLP(v0)                                 \
         "       urhadd v0.8b, v0.8b, v3.8b              \n" \
-                R_ADDLP(v1)                                 \
+                ADDLP(v1)                                 \
         "       urhadd v1.8b, v1.8b, v4.8b              \n" \
-                R_ADDLP(v2)                                 \
+                ADDLP(v2)                                 \
         "       urhadd v2.8b, v2.8b, v5.8b              \n" \
-                R_ST3_LAN2_OFS(%1, v0, v1, v2)               \
+                ST3_LAN2_OFS(%1, v0, v1, v2)               \
         "       sub x4, x4, #2                          \n" \
         "   RDN2_C3_W1:                                    \n" \
         "       cmp x4, #1                              \n" \
         "       blt RDN2_C3_H_PRE                          \n" \
-                R_LD3_LAN2_OFS(x1, v3, v4, v5)               \
-                R_ADDLP(v3)                                 \
-                R_ADDLP(v4)                                 \
-                R_LD3_LAN2_OFS(x0, v0, v1, v2)               \
-                R_ADDLP(v5)                                 \
-                R_ADDLP(v0)                                 \
+                LD3_LAN2_OFS(x1, v3, v4, v5)               \
+                ADDLP(v3)                                 \
+                ADDLP(v4)                                 \
+                LD3_LAN2_OFS(x0, v0, v1, v2)               \
+                ADDLP(v5)                                 \
+                ADDLP(v0)                                 \
         "       urhadd v0.8b, v0.8b, v3.8b              \n" \
-                R_ADDLP(v1)                                 \
+                ADDLP(v1)                                 \
         "       urhadd v1.8b, v1.8b, v4.8b              \n" \
-                R_ADDLP(v2)                                 \
+                ADDLP(v2)                                 \
         "       urhadd v2.8b, v2.8b, v5.8b              \n" \
-                R_ST3_LAN1_OFS(%1, v0, v1, v2)               \
+                ST3_LAN1_OFS(%1, v0, v1, v2)               \
         "   b RDN2_C3_H_PRE                                \n" \
         "RDN2_C3_END:                                      \n"
         :
@@ -436,8 +447,8 @@ static void resize_dn2_c3(const Image& src, const Image &dst) {
     );
 }
 
-static void resize_dn2h_c3(const Image& src, const Image &dst) {
-    ResizeBuffer buff{src.cols(), dst.cols(), 3};
+static void resize_dn2h_c3(const Image& src, const Image &dst, ResizeParam param) {
+    ResizeBuffer buff{param, src.cols(), dst.cols(), 3};
     std::vector<uint8_t> cache(3UL * dst.rows(), 0);
     // clang-format off
     #define RDN2H_C3_LD_LINE0_LAN(REG, IDX, VEC)                        \
@@ -489,20 +500,20 @@ static void resize_dn2h_c3(const Image& src, const Image &dst) {
                 RDN2H_C3_LD_LINE0_LAN(15, 5, v31.s[1])      \
                 RDN2H_C3_LD_LINE0_LAN(16, 6, v31.s[2])      \
                 RDN2H_C3_LD_LINE0_LAN(17, 7, v31.s[3])      \
-                R_MUL(v2, v5, v0, v1)                       \
+                MUL(v2, v5, v0, v1)                       \
                 RDN2H_C3_LD_LINE1_LAN(10, 0)                \
-                R_MUL(v3, v6, v0, v1)                       \
+                MUL(v3, v6, v0, v1)                       \
                 RDN2H_C3_LD_LINE1_LAN(11, 1)                \
-                R_MUL(v4, v7, v0, v1)                       \
+                MUL(v4, v7, v0, v1)                       \
                 RDN2H_C3_LD_LINE1_LAN(12, 2)                \
                 RDN2H_C3_LD_LINE1_LAN(13, 3)                \
                 RDN2H_C3_LD_LINE1_LAN(14, 4)                \
                 RDN2H_C3_LD_LINE1_LAN(15, 5)                \
                 RDN2H_C3_LD_LINE1_LAN(16, 6)                \
                 RDN2H_C3_LD_LINE1_LAN(17, 7)                \
-                R_MUL(v8, v11, v0, v1)                      \
-                R_MUL(v9, v12, v0, v1)                      \
-                R_MUL(v10, v13, v0, v1)                     \
+                MUL(v8, v11, v0, v1)                      \
+                MUL(v9, v12, v0, v1)                      \
+                MUL(v10, v13, v0, v1)                     \
         "       st3 {v8.8b, v9.8b, v10.8b}, [x6], #24   \n" \
         "       urhadd v2.8b, v2.8b, v8.8b              \n" \
         "       urhadd v3.8b, v3.8b, v9.8b              \n" \
@@ -520,21 +531,21 @@ static void resize_dn2h_c3(const Image& src, const Image &dst) {
                 RDN2H_C3_LD_LINE0_LAN(11, 1, v30.s[1])      \
                 RDN2H_C3_LD_LINE0_LAN(12, 2, v30.s[2])      \
                 RDN2H_C3_LD_LINE0_LAN(13, 3, v30.s[3])      \
-                R_MUL(v2, v5, v0, v1)                       \
+                MUL(v2, v5, v0, v1)                       \
                 RDN2H_C3_LD_LINE1_LAN(10, 0)                \
-                R_MUL(v3, v6, v0, v1)                       \
+                MUL(v3, v6, v0, v1)                       \
                 RDN2H_C3_LD_LINE1_LAN(11, 1)                \
-                R_MUL(v4, v7, v0, v1)                       \
+                MUL(v4, v7, v0, v1)                       \
                 RDN2H_C3_LD_LINE1_LAN(12, 2)                \
                 RDN2H_C3_LD_LINE1_LAN(13, 3)                \
-                R_MUL(v8, v11, v0, v1)                      \
-                R_MUL(v9, v12, v0, v1)                      \
-                R_MUL(v10, v13, v0, v1)                     \
-                R_ST3_LAN4_OFS(x6, v8, v9, v10)             \
+                MUL(v8, v11, v0, v1)                      \
+                MUL(v9, v12, v0, v1)                      \
+                MUL(v10, v13, v0, v1)                     \
+                ST3_LAN4_OFS(x6, v8, v9, v10)             \
         "       urhadd v2.8b, v2.8b, v8.8b              \n" \
         "       urhadd v3.8b, v3.8b, v9.8b              \n" \
         "       urhadd v4.8b, v4.8b, v10.8b             \n" \
-                R_ST3_LAN4_OFS(%1, v2, v3, v4)              \
+                ST3_LAN4_OFS(%1, v2, v3, v4)              \
         "   RDN2H_C3_W2:                                \n" \
         "       cmp x3, #2                              \n" \
         "       blt RDN2H_C3_W1                         \n" \
@@ -544,19 +555,19 @@ static void resize_dn2h_c3(const Image& src, const Image &dst) {
         "       ld1 {v30.1d}, [x4], #8                  \n" \
                 RDN2H_C3_LD_LINE0_LAN(10, 0, v30.s[0])      \
                 RDN2H_C3_LD_LINE0_LAN(11, 1, v30.s[1])      \
-                R_MUL(v2, v5, v0, v1)                       \
+                MUL(v2, v5, v0, v1)                       \
                 RDN2H_C3_LD_LINE1_LAN(10, 0)                \
-                R_MUL(v3, v6, v0, v1)                       \
+                MUL(v3, v6, v0, v1)                       \
                 RDN2H_C3_LD_LINE1_LAN(11, 1)                \
-                R_MUL(v4, v7, v0, v1)                       \
-                R_MUL(v8, v11, v0, v1)                      \
-                R_MUL(v9, v12, v0, v1)                      \
-                R_MUL(v10, v13, v0, v1)                     \
-                R_ST3_LAN2_OFS(x6, v8, v9, v10)             \
+                MUL(v4, v7, v0, v1)                       \
+                MUL(v8, v11, v0, v1)                      \
+                MUL(v9, v12, v0, v1)                      \
+                MUL(v10, v13, v0, v1)                     \
+                ST3_LAN2_OFS(x6, v8, v9, v10)             \
         "       urhadd v2.8b, v2.8b, v8.8b              \n" \
         "       urhadd v3.8b, v3.8b, v9.8b              \n" \
         "       urhadd v4.8b, v4.8b, v10.8b             \n" \
-                R_ST3_LAN2_OFS(%1, v2, v3, v4)              \
+                ST3_LAN2_OFS(%1, v2, v3, v4)              \
         "   RDN2H_C3_W1:                                \n" \
         "       cmp x3, #1                              \n" \
         "       blt RDN2H_C3_H_PRE                      \n" \
@@ -565,18 +576,18 @@ static void resize_dn2h_c3(const Image& src, const Image &dst) {
         "       sub x3, x3, #2                          \n" \
         "       ld1 {v30.s}[0], [x4], #4                \n" \
                 RDN2H_C3_LD_LINE0_LAN(10, 0, v30.s[0])      \
-                R_MUL(v2, v5, v0, v1)                       \
+                MUL(v2, v5, v0, v1)                       \
                 RDN2H_C3_LD_LINE1_LAN(10, 0)                \
-                R_MUL(v3, v6, v0, v1)                       \
-                R_MUL(v4, v7, v0, v1)                       \
-                R_MUL(v8, v11, v0, v1)                      \
-                R_MUL(v9, v12, v0, v1)                      \
-                R_MUL(v10, v13, v0, v1)                     \
-                R_ST3_LAN1_OFS(x6, v8, v9, v10)             \
+                MUL(v3, v6, v0, v1)                       \
+                MUL(v4, v7, v0, v1)                       \
+                MUL(v8, v11, v0, v1)                      \
+                MUL(v9, v12, v0, v1)                      \
+                MUL(v10, v13, v0, v1)                     \
+                ST3_LAN1_OFS(x6, v8, v9, v10)             \
         "       urhadd v2.8b, v2.8b, v8.8b              \n" \
         "       urhadd v3.8b, v3.8b, v9.8b              \n" \
         "       urhadd v4.8b, v4.8b, v10.8b             \n" \
-                R_ST3_LAN1_OFS(%1, v2, v3, v4)              \
+                ST3_LAN1_OFS(%1, v2, v3, v4)              \
         "   b RDN2H_C3_H_PRE                            \n" \
         "RDN2H_C3_END:                                  \n"
         :
@@ -591,8 +602,8 @@ static void resize_dn2h_c3(const Image& src, const Image &dst) {
     // clang-format on
 }
 
-static void resize_dn2w_c3(const Image& src, const Image &dst) {
-    ResizeBuffer buff{src.rows(), dst.rows()};
+static void resize_dn2w_c3(const Image& src, const Image &dst, ResizeParam param) {
+    ResizeBuffer buff{param, src.rows(), dst.rows()};
     std::vector<uint8_t> cache(3UL * dst.rows(), 0);
     // clang-format off
 
@@ -629,17 +640,17 @@ static void resize_dn2w_c3(const Image& src, const Image &dst) {
         "   RDN2W_C3_W8:                                \n" \
         "       subs x6, x6, #8                         \n" \
         "       ld3 {v5.16b, v6.16b, v7.16b}, [x1], #48 \n" \
-                R_ADDLP(v5)                                 \
-                R_ADDLP(v6)                                 \
+                ADDLP(v5)                                 \
+                ADDLP(v6)                                 \
         "       ld3 {v2.16b, v3.16b, v4.16b}, [x0], #48 \n" \
-                R_ADDLP(v7)                                 \
-                R_ADDLP(v2)                                 \
+                ADDLP(v7)                                 \
+                ADDLP(v2)                                 \
         "       st3 {v5.8b, v6.8b, v7.8b}, [x2], #24    \n" \
-                R_MUL(v2, v5, v0, v1)                       \
-                R_ADDLP(v3)                                 \
-                R_MUL(v3, v6, v0, v1)                       \
-                R_ADDLP(v4)                                 \
-                R_MUL(v4, v7, v0, v1)                       \
+                MUL(v2, v5, v0, v1)                       \
+                ADDLP(v3)                                 \
+                MUL(v3, v6, v0, v1)                       \
+                ADDLP(v4)                                 \
+                MUL(v4, v7, v0, v1)                       \
         "       st3 {v2.8b, v3.8b, v4.8b}, [%1], #24    \n" \
         "       bgt RDN2W_C3_W8                         \n" \
         "   RDN2W_C3_W4:                                \n" \
@@ -647,65 +658,65 @@ static void resize_dn2w_c3(const Image& src, const Image &dst) {
         "       blt RDN2W_C3_W2                         \n" \
         "       sub x7, x7, #4                          \n" \
         "       ld3 {v5.8b, v6.8b, v7.8b}, [x1], #24    \n" \
-                R_ADDLP(v5)                                 \
-                R_ADDLP(v6)                                 \
+                ADDLP(v5)                                 \
+                ADDLP(v6)                                 \
         "       ld3 {v2.8b, v3.8b, v4.8b}, [x0], #24    \n" \
-                R_ADDLP(v7)                                 \
-                R_ADDLP(v2)                                 \
-                R_ST3_LAN4_OFS(x2, v5, v6, v7)              \
-                R_MUL(v2, v5, v0, v1)                       \
-                R_ADDLP(v3)                                 \
-                R_MUL(v3, v6, v0, v1)                       \
-                R_ADDLP(v4)                                 \
-                R_MUL(v4, v7, v0, v1)                       \
-                R_ST3_LAN4_OFS(%1, v2, v3, v4)              \
+                ADDLP(v7)                                 \
+                ADDLP(v2)                                 \
+                ST3_LAN4_OFS(x2, v5, v6, v7)              \
+                MUL(v2, v5, v0, v1)                       \
+                ADDLP(v3)                                 \
+                MUL(v3, v6, v0, v1)                       \
+                ADDLP(v4)                                 \
+                MUL(v4, v7, v0, v1)                       \
+                ST3_LAN4_OFS(%1, v2, v3, v4)              \
         "   RDN2W_C3_W2:                                \n" \
         "       cmp x7, #2                              \n" \
         "       blt RDN2W_C3_W1                         \n" \
         "       sub x7, x7, #2                          \n" \
-                R_LD3_LAN4_OFS(x1, v5, v6, v7)              \
-                R_ADDLP(v5)                                 \
-                R_ADDLP(v6)                                 \
-                R_LD3_LAN4_OFS(x0, v2, v3, v4)              \
-                R_ADDLP(v7)                                 \
-                R_ADDLP(v2)                                 \
-                R_ST3_LAN2_OFS(x2, v5, v6, v7)              \
-                R_MUL(v2, v5, v0, v1)                       \
-                R_ADDLP(v3)                                 \
-                R_MUL(v3, v6, v0, v1)                       \
-                R_ADDLP(v4)                                 \
-                R_MUL(v4, v7, v0, v1)                       \
-                R_ST3_LAN2_OFS(%1, v2, v3, v4)              \
+                LD3_LAN4_OFS(x1, v5, v6, v7)              \
+                ADDLP(v5)                                 \
+                ADDLP(v6)                                 \
+                LD3_LAN4_OFS(x0, v2, v3, v4)              \
+                ADDLP(v7)                                 \
+                ADDLP(v2)                                 \
+                ST3_LAN2_OFS(x2, v5, v6, v7)              \
+                MUL(v2, v5, v0, v1)                       \
+                ADDLP(v3)                                 \
+                MUL(v3, v6, v0, v1)                       \
+                ADDLP(v4)                                 \
+                MUL(v4, v7, v0, v1)                       \
+                ST3_LAN2_OFS(%1, v2, v3, v4)              \
         "   RDN2W_C3_W1:                                \n" \
         "       cmp x7, #1                              \n" \
         "       blt RDN2W_C3_H_PRE                      \n" \
-                R_LD3_LAN2_OFS(x1, v5, v6, v7)              \
-                R_ADDLP(v5)                                 \
-                R_ADDLP(v6)                                 \
-                R_LD3_LAN2_OFS(x0, v2, v3, v4)              \
-                R_ADDLP(v7)                                 \
-                R_ADDLP(v2)                                 \
-                R_ST3_LAN1_OFS(x2, v5, v6, v7)              \
-                R_MUL(v2, v5, v0, v1)                       \
-                R_ADDLP(v3)                                 \
-                R_MUL(v3, v6, v0, v1)                       \
-                R_ADDLP(v4)                                 \
-                R_MUL(v4, v7, v0, v1)                       \
-                R_ST3_LAN1_OFS(%1, v2, v3, v4)              \
+                LD3_LAN2_OFS(x1, v5, v6, v7)              \
+                ADDLP(v5)                                 \
+                ADDLP(v6)                                 \
+                LD3_LAN2_OFS(x0, v2, v3, v4)              \
+                ADDLP(v7)                                 \
+                ADDLP(v2)                                 \
+                ST3_LAN1_OFS(x2, v5, v6, v7)              \
+                MUL(v2, v5, v0, v1)                       \
+                ADDLP(v3)                                 \
+                MUL(v3, v6, v0, v1)                       \
+                ADDLP(v4)                                 \
+                MUL(v4, v7, v0, v1)                       \
+                ST3_LAN1_OFS(%1, v2, v3, v4)              \
         "   b RDN2W_C3_H_PRE                            \n" \
         "RDN2W_C3_CACHE:                                \n" \
         "   cbz x6, RDN2W_C3_CW4                        \n" \
         "   RDN2W_C3_CW8:                               \n" \
         "       subs x6, x6, #8                         \n" \
         "       ld3 {v5.16b, v6.16b, v7.16b}, [x1], #48 \n" \
-                R_ADDLP(v5)                                 \
+                ADDLP(v5)                                 \
         "       ld3 {v2.8b, v3.8b, v4.8b}, [x2]         \n" \
-                R_ADDLP(v6)                                 \
-                R_MUL(v2, v5, v0, v1)                       \
-                R_ADDLP(v7)                                 \
-                R_MUL(v3, v6, v0, v1)                       \
+                ADDLP(v6)                                 \
+                MUL(v2, v5, v0, v1)                       \
+                ADDLP(v7)                                 \
+                MUL(v3, v6, v0, v1)                       \
         "       st3 {v5.8b, v6.8b, v7.8b}, [x2], #24    \n" \
-                R_MUL(v4, v7, v0, v1)                       \
+                MUL(v4, v7, v0, v1)                       \
         "       st3 {v2.8b, v3.8b, v4.8b}, [%1], #24    \n" \
         "       bgt RDN2W_C3_CW8                        \n" \
         "   RDN2W_C3_CW4:                               \n" \
@@ -713,43 +724,43 @@ static void resize_dn2w_c3(const Image& src, const Image &dst) {
         "       blt RDN2W_C3_CW2                        \n" \
         "       sub x7, x7, #4                          \n" \
         "       ld3 {v5.8b, v6.8b, v7.8b}, [x1], #24    \n" \
-                R_ADDLP(v5)                                 \
-                R_LD3_LAN4(x2, v2, v3, v4)                  \
-                R_ADDLP(v6)                                 \
-                R_MUL(v2, v5, v0, v1)                       \
-                R_ADDLP(v7)                                 \
-                R_MUL(v3, v6, v0, v1)                       \
-                R_ST3_LAN4_OFS(x2, v5, v6, v7)              \
-                R_MUL(v4, v7, v0, v1)                       \
-                R_ST3_LAN4_OFS(%1, v2, v3, v4)              \
+                ADDLP(v5)                                 \
+                LD3_LAN4(x2, v2, v3, v4)                  \
+                ADDLP(v6)                                 \
+                MUL(v2, v5, v0, v1)                       \
+                ADDLP(v7)                                 \
+                MUL(v3, v6, v0, v1)                       \
+                ST3_LAN4_OFS(x2, v5, v6, v7)              \
+                MUL(v4, v7, v0, v1)                       \
+                ST3_LAN4_OFS(%1, v2, v3, v4)              \
         "   RDN2W_C3_CW2:                               \n" \
         "       cmp x7, #2                              \n" \
         "       blt RDN2W_C3_CW1                        \n" \
         "       sub x7, x7, #2                          \n" \
-                R_LD3_LAN4_OFS(x1, v5, v6, v7)              \
-                R_ADDLP(v5)                                 \
-                R_LD3_LAN2(x2, v2, v3, v4)                  \
-                R_ADDLP(v6)                                 \
-                R_MUL(v2, v5, v0, v1)                       \
-                R_ADDLP(v7)                                 \
-                R_MUL(v3, v6, v0, v1)                       \
-                R_ST3_LAN2_OFS(x2, v5, v6, v7)              \
-                R_MUL(v4, v7, v0, v1)                       \
-                R_ST3_LAN2_OFS(%1, v2, v3, v4)              \
+                LD3_LAN4_OFS(x1, v5, v6, v7)              \
+                ADDLP(v5)                                 \
+                LD3_LAN2(x2, v2, v3, v4)                  \
+                ADDLP(v6)                                 \
+                MUL(v2, v5, v0, v1)                       \
+                ADDLP(v7)                                 \
+                MUL(v3, v6, v0, v1)                       \
+                ST3_LAN2_OFS(x2, v5, v6, v7)              \
+                MUL(v4, v7, v0, v1)                       \
+                ST3_LAN2_OFS(%1, v2, v3, v4)              \
         "   RDN2W_C3_CW1:                               \n" \
         "       cmp x7, #1                              \n" \
         "       blt RDN2W_C3_H_PRE                      \n" \
         "       sub x7, x7, #1                          \n" \
-                R_LD3_LAN2_OFS(x1, v5, v6, v7)              \
-                R_ADDLP(v5)                                 \
-                R_LD3_LAN1(x2, v2, v3, v4)                  \
-                R_ADDLP(v6)                                 \
-                R_MUL(v2, v5, v0, v1)                       \
-                R_ADDLP(v7)                                 \
-                R_MUL(v3, v6, v0, v1)                       \
-                R_ST3_LAN1_OFS(x2, v5, v6, v7)              \
-                R_MUL(v4, v7, v0, v1)                       \
-                R_ST3_LAN1_OFS(%1, v2, v3, v4)              \
+                LD3_LAN2_OFS(x1, v5, v6, v7)              \
+                ADDLP(v5)                                 \
+                LD3_LAN1(x2, v2, v3, v4)                  \
+                ADDLP(v6)                                 \
+                MUL(v2, v5, v0, v1)                       \
+                ADDLP(v7)                                 \
+                MUL(v3, v6, v0, v1)                       \
+                ST3_LAN1_OFS(x2, v5, v6, v7)              \
+                MUL(v4, v7, v0, v1)                       \
+                ST3_LAN1_OFS(%1, v2, v3, v4)              \
         "   b RDN2W_C3_H_PRE                            \n" \
         "RDN2W_C3_END:                                  \n"
     :
@@ -761,9 +772,9 @@ static void resize_dn2w_c3(const Image& src, const Image &dst) {
     // clang-format on
 }
 
-static void resize_comm_c3(const Image& src, const Image &dst) {
-    ResizeBuffer buff_h{src.rows(), dst.rows()};
-    ResizeBuffer buff_w{src.cols(), dst.cols(), 3};
+static void resize_comm_c3(const Image& src, const Image &dst, ResizeParam param) {
+    ResizeBuffer buff_h{param, src.rows(), dst.rows()};
+    ResizeBuffer buff_w{param, src.cols(), dst.cols(), 3};
     std::vector<uint8_t> cache(3UL * dst.rows(), 0);
     // clang-format off
     #define RDNC_C3_LD_LINE0_LAN(REG, IDX, VEC)                         \
@@ -823,24 +834,24 @@ static void resize_comm_c3(const Image& src, const Image &dst) {
                 RDNC_C3_LD_LINE0_LAN(15, 5, v31.s[1])           \
                 RDNC_C3_LD_LINE0_LAN(16, 6, v31.s[2])           \
                 RDNC_C3_LD_LINE0_LAN(17, 7, v31.s[3])           \
-                R_MUL(v4, v7, v2, v3)                           \
+                MUL(v4, v7, v2, v3)                           \
                 RDNC_C3_LD_LINE1_LAN(10, 0)                     \
-                R_MUL(v5, v8, v2, v3)                           \
+                MUL(v5, v8, v2, v3)                           \
                 RDNC_C3_LD_LINE1_LAN(11, 1)                     \
-                R_MUL(v6, v9, v2, v3)                           \
+                MUL(v6, v9, v2, v3)                           \
                 RDNC_C3_LD_LINE1_LAN(12, 2)                     \
                 RDNC_C3_LD_LINE1_LAN(13, 3)                     \
                 RDNC_C3_LD_LINE1_LAN(14, 4)                     \
                 RDNC_C3_LD_LINE1_LAN(15, 5)                     \
                 RDNC_C3_LD_LINE1_LAN(16, 6)                     \
                 RDNC_C3_LD_LINE1_LAN(17, 7)                     \
-                R_MUL(v10, v13, v2, v3)                         \
-                R_MUL(v11, v14, v2, v3)                         \
-                R_MUL(v12, v15, v2, v3)                         \
+                MUL(v10, v13, v2, v3)                         \
+                MUL(v11, v14, v2, v3)                         \
+                MUL(v12, v15, v2, v3)                         \
         "       st3 {v10.8b, v11.8b, v12.8b}, [x1], #24     \n" \
-                R_MUL(v4, v10, v0, v1)                          \
-                R_MUL(v5, v11, v0, v1)                          \
-                R_MUL(v6, v12, v0, v1)                          \
+                MUL(v4, v10, v0, v1)                          \
+                MUL(v5, v11, v0, v1)                          \
+                MUL(v6, v12, v0, v1)                          \
         "       st3 {v4.8b, v5.8b, v6.8b}, [%1], #24        \n" \
         "       bgt RDNC_C3_W8                              \n" \
         "   RDNC_C3_W4:                                     \n" \
@@ -853,21 +864,21 @@ static void resize_comm_c3(const Image& src, const Image &dst) {
                 RDNC_C3_LD_LINE0_LAN(11, 1, v30.s[1])           \
                 RDNC_C3_LD_LINE0_LAN(12, 2, v30.s[2])           \
                 RDNC_C3_LD_LINE0_LAN(13, 3, v30.s[3])           \
-                R_MUL(v4, v7, v2, v3)                           \
+                MUL(v4, v7, v2, v3)                           \
                 RDNC_C3_LD_LINE1_LAN(10, 0)                     \
-                R_MUL(v5, v8, v2, v3)                           \
+                MUL(v5, v8, v2, v3)                           \
                 RDNC_C3_LD_LINE1_LAN(11, 1)                     \
-                R_MUL(v6, v9, v2, v3)                           \
+                MUL(v6, v9, v2, v3)                           \
                 RDNC_C3_LD_LINE1_LAN(12, 2)                     \
                 RDNC_C3_LD_LINE1_LAN(13, 3)                     \
-                R_MUL(v10, v13, v2, v3)                         \
-                R_MUL(v11, v14, v2, v3)                         \
-                R_MUL(v12, v15, v2, v3)                         \
-                R_ST3_LAN4_OFS(x1, v10, v11, v12)               \
-                R_MUL(v4, v10, v0, v1)                          \
-                R_MUL(v5, v11, v0, v1)                          \
-                R_MUL(v6, v12, v0, v1)                          \
-                R_ST3_LAN4_OFS(%1, v4, v5, v6)                  \
+                MUL(v10, v13, v2, v3)                         \
+                MUL(v11, v14, v2, v3)                         \
+                MUL(v12, v15, v2, v3)                         \
+                ST3_LAN4_OFS(x1, v10, v11, v12)               \
+                MUL(v4, v10, v0, v1)                          \
+                MUL(v5, v11, v0, v1)                          \
+                MUL(v6, v12, v0, v1)                          \
+                ST3_LAN4_OFS(%1, v4, v5, v6)                  \
         "       sub x6, x6, #4                              \n" \
         "   RDNC_C3_W2:                                     \n" \
         "       cmp x6, #2                                  \n" \
@@ -877,19 +888,19 @@ static void resize_comm_c3(const Image& src, const Image &dst) {
         "       ld1 {v30.1d}, [x7], #8                      \n" \
                 RDNC_C3_LD_LINE0_LAN(10, 0, v30.s[0])           \
                 RDNC_C3_LD_LINE0_LAN(11, 1, v30.s[1])           \
-                R_MUL(v4, v7, v2, v3)                           \
+                MUL(v4, v7, v2, v3)                           \
                 RDNC_C3_LD_LINE1_LAN(10, 0)                     \
-                R_MUL(v5, v8, v2, v3)                           \
+                MUL(v5, v8, v2, v3)                           \
                 RDNC_C3_LD_LINE1_LAN(11, 1)                     \
-                R_MUL(v6, v9, v2, v3)                           \
-                R_MUL(v10, v13, v2, v3)                         \
-                R_MUL(v11, v14, v2, v3)                         \
-                R_MUL(v12, v15, v2, v3)                         \
-                R_ST3_LAN2_OFS(x1, v10, v11, v12)               \
-                R_MUL(v4, v7, v0, v1)                           \
-                R_MUL(v5, v8, v0, v1)                           \
-                R_MUL(v6, v9, v0, v1)                           \
-                R_ST3_LAN2_OFS(%1, v4, v5, v6)                  \
+                MUL(v6, v9, v2, v3)                           \
+                MUL(v10, v13, v2, v3)                         \
+                MUL(v11, v14, v2, v3)                         \
+                MUL(v12, v15, v2, v3)                         \
+                ST3_LAN2_OFS(x1, v10, v11, v12)               \
+                MUL(v4, v7, v0, v1)                           \
+                MUL(v5, v8, v0, v1)                           \
+                MUL(v6, v9, v0, v1)                           \
+                ST3_LAN2_OFS(%1, v4, v5, v6)                  \
         "       sub x6, x6, #2                              \n" \
         "   RDNC_C3_W1:                                     \n" \
         "       cmp x6, #1                                  \n" \
@@ -898,18 +909,18 @@ static void resize_comm_c3(const Image& src, const Image &dst) {
         "       sub v3.8b, v29.8b, v2.8b                    \n" \
         "       ld1 {v30.s}[0], [x7], #4                    \n" \
                 RDNC_C3_LD_LINE0_LAN(10, 0, v30.s[0])           \
-                R_MUL(v4, v7, v2, v3)                           \
+                MUL(v4, v7, v2, v3)                           \
                 RDNC_C3_LD_LINE1_LAN(10, 0)                     \
-                R_MUL(v5, v8, v2, v3)                           \
-                R_MUL(v6, v9, v2, v3)                           \
-                R_MUL(v10, v13, v2, v3)                         \
-                R_MUL(v11, v14, v2, v3)                         \
-                R_MUL(v12, v15, v2, v3)                         \
-                R_ST3_LAN1_OFS(x1, v10, v11, v12)               \
-                R_MUL(v4, v7, v0, v1)                           \
-                R_MUL(v5, v8, v0, v1)                           \
-                R_MUL(v6, v9, v0, v1)                           \
-                R_ST3_LAN1_OFS(%1, v4, v5, v6)                  \
+                MUL(v5, v8, v2, v3)                           \
+                MUL(v6, v9, v2, v3)                           \
+                MUL(v10, v13, v2, v3)                         \
+                MUL(v11, v14, v2, v3)                         \
+                MUL(v12, v15, v2, v3)                         \
+                ST3_LAN1_OFS(x1, v10, v11, v12)               \
+                MUL(v4, v7, v0, v1)                           \
+                MUL(v5, v8, v0, v1)                           \
+                MUL(v6, v9, v0, v1)                           \
+                ST3_LAN1_OFS(%1, v4, v5, v6)                  \
         "   b RDNC_C3_H_PRE                                 \n" \
         "RDNC_C3_CACHE:                                     \n" \
         "   cbz x5, RDNC_C3_CW4                             \n" \
@@ -927,13 +938,13 @@ static void resize_comm_c3(const Image& src, const Image &dst) {
                 RDNC_C3_LD_LINE0_LAN(15, 5, v31.s[1])           \
                 RDNC_C3_LD_LINE0_LAN(16, 6, v31.s[2])           \
                 RDNC_C3_LD_LINE0_LAN(17, 7, v31.s[3])           \
-                R_MUL(v4, v7, v2, v3)                           \
-                R_MUL(v5, v8, v2, v3)                           \
-                R_MUL(v6, v9, v2, v3)                           \
+                MUL(v4, v7, v2, v3)                           \
+                MUL(v5, v8, v2, v3)                           \
+                MUL(v6, v9, v2, v3)                           \
         "       st3 {v4.8b, v5.8b, v6.8b}, [x1], #24        \n" \
-                R_MUL(v10, v4, v0, v1)                          \
-                R_MUL(v11, v5, v0, v1)                          \
-                R_MUL(v12, v6, v0, v1)                          \
+                MUL(v10, v4, v0, v1)                          \
+                MUL(v11, v5, v0, v1)                          \
+                MUL(v12, v6, v0, v1)                          \
         "       st3 {v10.8b, v11.8b, v12.8b}, [%1], #24     \n" \
         "       bgt RDNC_C3_CW8                             \n" \
         "   RDNC_C3_CW4:                                    \n" \
@@ -942,19 +953,19 @@ static void resize_comm_c3(const Image& src, const Image &dst) {
         "       ld1 {v2.s}[0], [x8], #4                     \n" \
         "       sub v3.8b, v29.8b, v2.8b                    \n" \
         "       ld1 {v30.4s}, [x7], #16                     \n" \
-                R_LD3_LAN4(x1, v10, v11, v12)                   \
+                LD3_LAN4(x1, v10, v11, v12)                   \
                 RDNC_C3_LD_LINE0_LAN(10, 0, v30.s[0])           \
                 RDNC_C3_LD_LINE0_LAN(11, 1, v30.s[1])           \
                 RDNC_C3_LD_LINE0_LAN(12, 2, v30.s[2])           \
                 RDNC_C3_LD_LINE0_LAN(13, 3, v30.s[3])           \
-                R_MUL(v4, v7, v2, v3)                           \
-                R_MUL(v5, v8, v2, v3)                           \
-                R_MUL(v6, v9, v2, v3)                           \
-                R_ST3_LAN4_OFS(x1, v4, v5, v6)                  \
-                R_MUL(v10, v4, v0, v1)                          \
-                R_MUL(v11, v5, v0, v1)                          \
-                R_MUL(v12, v6, v0, v1)                          \
-                R_ST3_LAN4_OFS(%1, v10, v11, v12)               \
+                MUL(v4, v7, v2, v3)                           \
+                MUL(v5, v8, v2, v3)                           \
+                MUL(v6, v9, v2, v3)                           \
+                ST3_LAN4_OFS(x1, v4, v5, v6)                  \
+                MUL(v10, v4, v0, v1)                          \
+                MUL(v11, v5, v0, v1)                          \
+                MUL(v12, v6, v0, v1)                          \
+                ST3_LAN4_OFS(%1, v10, v11, v12)               \
         "       sub x6, x6, #4                              \n" \
         "   RDNC_C3_CW2:                                    \n" \
         "       cmp x6, #2                                  \n" \
@@ -962,17 +973,17 @@ static void resize_comm_c3(const Image& src, const Image &dst) {
         "       ld1 {v2.h}[0], [x8], #2                     \n" \
         "       sub v3.8b, v29.8b, v2.8b                    \n" \
         "       ld1 {v30.1d}, [x7], #8                      \n" \
-                R_LD3_LAN2(x1, v10, v11, v12)                   \
+                LD3_LAN2(x1, v10, v11, v12)                   \
                 RDNC_C3_LD_LINE0_LAN(10, 0, v30.s[0])           \
                 RDNC_C3_LD_LINE0_LAN(11, 1, v30.s[1])           \
-                R_MUL(v4, v7, v2, v3)                           \
-                R_MUL(v5, v8, v2, v3)                           \
-                R_MUL(v6, v9, v2, v3)                           \
-                R_ST3_LAN2_OFS(x1, v4, v5, v6)                  \
-                R_MUL(v10, v4, v0, v1)                          \
-                R_MUL(v11, v5, v0, v1)                          \
-                R_MUL(v12, v6, v0, v1)                          \
-                R_ST3_LAN2_OFS(%1, v10, v11, v12)               \
+                MUL(v4, v7, v2, v3)                           \
+                MUL(v5, v8, v2, v3)                           \
+                MUL(v6, v9, v2, v3)                           \
+                ST3_LAN2_OFS(x1, v4, v5, v6)                  \
+                MUL(v10, v4, v0, v1)                          \
+                MUL(v11, v5, v0, v1)                          \
+                MUL(v12, v6, v0, v1)                          \
+                ST3_LAN2_OFS(%1, v10, v11, v12)               \
         "       sub x6, x6, #2                              \n" \
         "   RDNC_C3_CW1:                                    \n" \
         "       cmp x6, #1                                  \n" \
@@ -980,16 +991,16 @@ static void resize_comm_c3(const Image& src, const Image &dst) {
         "       ld1 {v2.b}[0], [x8], #1                     \n" \
         "       sub v3.8b, v29.8b, v2.8b                    \n" \
         "       ld1 {v30.s}[0], [x7], #4                    \n" \
-                R_LD3_LAN1(x1, v10, v11, v12)                   \
+                LD3_LAN1(x1, v10, v11, v12)                   \
                 RDNC_C3_LD_LINE0_LAN(10, 0, v30.s[0])           \
-                R_MUL(v4, v7, v2, v3)                           \
-                R_MUL(v5, v8, v2, v3)                           \
-                R_MUL(v6, v9, v2, v3)                           \
-                R_ST3_LAN1_OFS(x1, v4, v5, v6)                  \
-                R_MUL(v10, v4, v0, v1)                          \
-                R_MUL(v11, v5, v0, v1)                          \
-                R_MUL(v12, v6, v0, v1)                          \
-                R_ST3_LAN1_OFS(%1, v10, v11, v12)               \
+                MUL(v4, v7, v2, v3)                           \
+                MUL(v5, v8, v2, v3)                           \
+                MUL(v6, v9, v2, v3)                           \
+                ST3_LAN1_OFS(x1, v4, v5, v6)                  \
+                MUL(v10, v4, v0, v1)                          \
+                MUL(v11, v5, v0, v1)                          \
+                MUL(v12, v6, v0, v1)                          \
+                ST3_LAN1_OFS(%1, v10, v11, v12)               \
         "   b RDNC_C3_H_PRE                                 \n" \
         "RDNC_C3_END:                                       \n"
     :
@@ -1006,11 +1017,11 @@ static void resize_comm_c3(const Image& src, const Image &dst) {
     #undef RDNC_C3_LD_LINE1_LAN
 }
 
-static void resize_c1(const Image& src, const Image &dst) {
-    resize_dn2_c1(src, dst);
+static void resize_c1(const Image& src, const Image &dst, ResizeParam param) {
+    resize_dn2_c1(src, dst, param);
 }
 
-static void resize_c3(const Image& src, const Image &dst) {
+static void resize_c3(const Image& src, const Image &dst, ResizeParam param){
     auto sw = src.cols();
     auto sh = src.rows();
     auto dw = dst.cols();
@@ -1018,46 +1029,46 @@ static void resize_c3(const Image& src, const Image &dst) {
 
     if ((dh * 2) == sh) {
         if ((dw * 2) == sw) {
-            resize_dn2_c3(src, dst);
+            resize_dn2_c3(src, dst, param);
             return;
         }
-        resize_dn2h_c3(src, dst);
+        resize_dn2h_c3(src, dst, param);
         return;
     }
     if ((dw * 2) == sw) {
-        resize_dn2w_c3(src, dst);
+        resize_dn2w_c3(src, dst, param);
         return;
     }
-    resize_comm_c3(src, dst);
+    resize_comm_c3(src, dst, param);
 }
 
-void resize(const Image& src, const Image &dst) {
+void resize(const Image& src, const Image &dst, ResizeParam param) {
     switch (src.fmt()) {
         case ImageFormat::BGR:
         case ImageFormat::RGB:
-            resize_c3(src, dst);
+            resize_c3(src, dst, param);
             break;
         case ImageFormat::GRAY:
-            resize_c1(src, dst);
+            resize_c1(src, dst, param);
             break;
         default:
             break;
     }
 }
 
-#undef R_ST3_LAN1_OFS
-#undef R_ST3_LAN2_OFS
-#undef R_ST3_LAN4_OFS
-#undef R_LD3_LAN1_OFS
-#undef R_LD3_LAN2_OFS
-#undef R_LD3_LAN4_OFS
-#undef R_ST3_LAN1
-#undef R_ST3_LAN2
-#undef R_ST3_LAN4
-#undef R_LD3_LAN1
-#undef R_LD3_LAN2
-#undef R_LD3_LAN4
-#undef R_MUL
-#undef R_ADDLP
+#undef ST3_LAN1_OFS
+#undef ST3_LAN2_OFS
+#undef ST3_LAN4_OFS
+#undef LD3_LAN1_OFS
+#undef LD3_LAN2_OFS
+#undef LD3_LAN4_OFS
+#undef ST3_LAN1
+#undef ST3_LAN2
+#undef ST3_LAN4
+#undef LD3_LAN1
+#undef LD3_LAN2
+#undef LD3_LAN4
+#undef MUL
+#undef ADDLP
 
 NAMESPACE_END

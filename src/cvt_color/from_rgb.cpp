@@ -288,9 +288,9 @@ void rgb_to_gray(const Image &src, const Image &dst)
         R"(
             and x0, %1, #15
             sub %1, %1, x0
-            cbz %1, GRAY_L1
+            cbz %1, 2f
 
-        GRAY_L16:
+        1:
             ld3       {v0.16b, v1.16b, v2.16b}, [%0], #48
             umull     v3.8h, v0.8b, v29.8b    // * r
             umlal     v3.8h, v1.8b, v30.8b    // * g
@@ -303,11 +303,11 @@ void rgb_to_gray(const Image &src, const Image &dst)
             uqshrn2   v3.16b, v0.8h, %[shift]
             st1       {v3.16b}, [%2], #16
             subs      %1, %1, #16
-            bgt       GRAY_L16
+            bgt       1b
 
-        GRAY_L1:
+        2:
             cmp       x0, #1
-            blt       GRAY_END
+            blt       3f
             ld3       {v0.b, v1.b, v2.b}[0], [%0], #3
             umull     v3.8h, v0.8b, v29.8b    // * r
             umlal     v3.8h, v1.8b, v30.8b    // * g
@@ -315,9 +315,9 @@ void rgb_to_gray(const Image &src, const Image &dst)
             uqshrn    v0.8b, v3.8h, %[shift]
             st1       {v0.b}[1], [%2], #1
             sub       x0, x0, #1
-            b GRAY_L1
+            b 2b
 
-        GRAY_END:
+        3:
         )"
         :
         : "r"(src.data()), "r"(src.pixels()), "r"(dst.data())
@@ -333,23 +333,23 @@ void rgb_to_rgba(const Image &src, const Image &dst)
             and x0, %1, #15
             sub %1, %1, x0
             movi v3.16b, %[alpha]
-            cbz %1, RGBA_L1
+            cbz %1, 2f
 
-        RGBA_L16:
+        1:
             ld3 {v0.16b, v1.16b, v2.16b}, [%0], #48
             subs %1, %1, #16
             prfm pldl1keep, [%0, 448]
             st4 {v0.16b, v1.16b, v2.16b, v3.16b}, [%2], #64
-            bgt RGBA_L16
+            bgt 1b
 
-        RGBA_L1:
+        2:
             cmp x0, #1
-            blt RGBA_END
+            blt 3f
             ld3 {v0.b, v1.b, v2.b}[0], [%0], #3
             st4 {v0.b, v1.b, v2.b, v3.b}[0], [%2], #4
             sub x0, x0, #1
-            b RGBA_L1
-        RGBA_END:
+            b 2b
+        3:
         )"
         :
         : "r"(src.data()), "r"(src.pixels()), "r"(dst.data())
@@ -363,23 +363,24 @@ void rgb_to_rgb(const Image &src, const Image &dst)
         R"(
             and x0, %1, #15
             sub %1, %1, x0
-            cbz %1, RGB_L1
+            cbz %1, 2f
 
-        RGB_L16:
-            ld3       {v0.16b, v1.16b, v2.16b}, [%0], #48
-            subs      %1, %1, #16
-            prfm      pldl1keep, [%0, 448]
-            st3       {v0.16b, v1.16b, v2.16b}, [%2], #48
-            bgt       RGB_L16
+        1:
+            ld3 {v0.16b, v1.16b, v2.16b}, [%0], #48
+            subs %1, %1, #16
+            prfm pldl1keep, [%0, 448]
+            st3 {v0.16b, v1.16b, v2.16b}, [%2], #48
+            bgt 1b
 
-        RGB_L1:
-            cmp       x0, #1
-            blt       RGB_END
-            ld3       {v0.b, v1.b, v2.b}[0], [%0], #3
-            sub       x0, x0, #1
-            st3       {v0.b, v1.b, v2.b}[0], [%2], #3
+        2:
+            cmp x0, #1
+            blt 3f
+            ld3 {v0.b, v1.b, v2.b}[0], [%0], #3
+            sub x0, x0, #1
+            st3 {v0.b, v1.b, v2.b}[0], [%2], #3
+            b 2b
 
-        RGB_END:
+        3:
         )"
         :
         : "r"(src.data()), "r"(src.pixels()), "r"(dst.data())
@@ -392,9 +393,9 @@ void rgb_to_bgr(const Image &src, const Image &dst)
         R"(
             and x0, %1, #15
             sub %1, %1, x0
-            cbz %1, BGR_L1
+            cbz %1, 2f
 
-        BGR_L16:
+        1:
             ld3 {v0.16b, v1.16b, v2.16b}, [%0], #48
             mov v3.16b, v2.16b
             mov v2.16b, v0.16b
@@ -402,20 +403,20 @@ void rgb_to_bgr(const Image &src, const Image &dst)
             mov v0.16b, v3.16b
             subs %1, %1, #16
             st3 {v0.16b, v1.16b, v2.16b}, [%2], #48
-            bgt BGR_L16
+            bgt 1b
 
-        BGR_L1:
-            cmp       x0, #1
-            blt       BGR_END
-            ld3       {v0.b, v1.b, v2.b}[0], [%0], #3
+        2:
+            cmp x0, #1
+            blt 3f
+            ld3 {v0.b, v1.b, v2.b}[0], [%0], #3
             mov v3.8b, v2.8b
             mov v2.8b, v0.8b
-            sub       x0, x0, #1
+            sub x0, x0, #1
             mov v0.8b, v3.8b
-            st3       {v0.b, v1.b, v2.b}[0], [%2], #3
-            b RGB_L1
+            st3 {v0.b, v1.b, v2.b}[0], [%2], #3
+            b 2b
 
-        BGR_END:
+        3:
         )"
         :
         : "r"(src.data()), "r"(src.pixels()), "r"(dst.data())
@@ -429,9 +430,9 @@ void rgb_to_bgra(const Image &src, const Image &dst)
             movi v3.16b, %[alpha]
             and x0, %1, #15
             sub %1, %1, x0
-            cbz %1, BGRA_L1
+            cbz %1, 2f
 
-        BGRA_L16:
+        1:
             ld3 {v0.16b, v1.16b, v2.16b}, [%0], #48
             mov v4.16b, v2.16b
             subs %1, %1, #16
@@ -439,20 +440,20 @@ void rgb_to_bgra(const Image &src, const Image &dst)
             prfm pldl1keep, [%0, #448]
             mov v0.16b, v4.16b
             st4 {v0.16b, v1.16b, v2.16b, v3.16b}, [%2], #64
-            bgt BGRA_L16
+            bgt 1b
 
-        BGRA_L1:
+        2:
             cmp x0, #1
-            blt BGRA_END
+            blt 3f
             ld3 {v0.b, v1.b, v2.b}[0], [%0], #3
             mov v4.8b, v2.8b
             sub x0, x0, #1
             mov v2.8b, v0.8b
             mov v0.8b, v4.8b
             st4 {v0.b, v1.b, v2.b, v3.b}[0], [%2], #4
-            b RGBA_L1
+            b 2b
 
-        BGRA_END:
+        3:
         )"
         :
         : "r"(src.data()), "r"(src.pixels()), "r"(dst.data())
@@ -471,9 +472,9 @@ void rgb_to_yuyv(const Image &src, const Image &dst)
 
             and x0, %1, #7
             sub %1, %1, x0
-            cbz %1, YUYV_L2
+            cbz %1, 2f
 
-        YUYV_L8:
+        1:
             ld3 {v0.8b, v1.8b, v2.8b}, [%0], #24
             umull v3.8h, v0.8b, v29.8b
             umlal v3.8h, v1.8b, v30.8b
@@ -499,11 +500,11 @@ void rgb_to_yuyv(const Image &src, const Image &dst)
             subs %1, %1, #8
 
             st2 {v3.8b, v4.8b}, [%2], #16
-            bgt YUYV_L8
+            bgt 1b
 
-        YUYV_L2:
+        2:
             cmp x0, #2
-            blt YUYV_END
+            blt 3f
             ld3 {v0.b, v1.b, v2.b}[0], [%0], #3
             ld3 {v0.b, v1.b, v2.b}[1], [%0], #3
 
@@ -531,9 +532,9 @@ void rgb_to_yuyv(const Image &src, const Image &dst)
 
             st2 {v3.b, v4.b}[0], [%2], #2
             st2 {v3.b, v4.b}[1], [%2], #2
-            b YUYV_L2
+            b 2b
 
-        YUYV_END:
+        3:
         )"
         :
         : "r"(src.data()), "r"(src.pixels()), "r"(dst.data())
@@ -553,9 +554,9 @@ void rgb_to_uyvy(const Image &src, const Image &dst)
 
             and x0, %1, #7
             sub %1, %1, x0
-            cbz %1, UYVY_L2
+            cbz %1, 2f
 
-        UYVY_L8:
+        1:
             ld3 {v0.8b, v1.8b, v2.8b}, [%0], #24
             umull v4.8h, v0.8b, v31.8b
             umlal v4.8h, v1.8b, v30.8b
@@ -581,11 +582,11 @@ void rgb_to_uyvy(const Image &src, const Image &dst)
             subs %1, %1, #8
 
             st2 {v3.8b, v4.8b}, [%2], #16
-            bgt UYVY_L8
+            bgt 1b
 
-        UYVY_L2:
+        2:
             cmp x0, #2
-            blt UYVY_END
+            blt 3f
             ld3 {v0.b, v1.b, v2.b}[0], [%0], #3
             ld3 {v0.b, v1.b, v2.b}[1], [%0], #3
 
@@ -614,9 +615,9 @@ void rgb_to_uyvy(const Image &src, const Image &dst)
 
             st2 {v3.b, v4.b}[0], [%2], #2
             st2 {v3.b, v4.b}[1], [%2], #2
-            b UYVY_L2
+            b 2b
 
-        UYVY_END:
+        3:
         )"
         :
         : "r"(src.data()), "r"(src.pixels()), "r"(dst.data())
@@ -649,9 +650,9 @@ void rgb_to_i420(const Image &src, const Image &dst)
             mov x1, %0
             mov x3, %1
 
-        I420_H2:
+        1:
             cmp %[h], #2
-            blt I420_END
+            blt 4f
             sub %[h], %[h], #2
             mov x0, x1
             add x1, x1, %[ss]
@@ -661,8 +662,8 @@ void rgb_to_i420(const Image &src, const Image &dst)
 
             and x5, %[w], #7
             sub x4, %[w], x5
-            cbz x4, I420_H2_L2
-        I420_H2_L8:
+            cbz x4, 3f
+        2:
             ld3 {v0.8b, v1.8b, v2.8b}, [x0], #24
             ld3 {v3.8b, v4.8b, v5.8b}, [x1], #24
 
@@ -705,10 +706,10 @@ void rgb_to_i420(const Image &src, const Image &dst)
             st1 {v3.s}[0], [%2], #4
             subs x4, x4, #8
             st1 {v4.s}[0], [%3], #4
-            bgt I420_H2_L8
-        I420_H2_L2:
+            bgt 2b
+        3:
             cmp x5, #2
-            blt I420_H2
+            blt 1b
 
             ld3 {v0.b, v1.b, v2.b}[0], [x0], #3
             ld3 {v0.b, v1.b, v2.b}[1], [x0], #3
@@ -751,9 +752,9 @@ void rgb_to_i420(const Image &src, const Image &dst)
 
             st1 {v3.b}[0], [%2], #1
             st1 {v4.b}[0], [%3], #1
-            bgt I420_H2_L2
+            b 3b
 
-        I420_END:
+        4:
         )"
         :
         : "r"(src.data()), "r"(y), "r"(u), "r"(v)
@@ -785,9 +786,9 @@ void rgb_to_nv12(const Image &src, const Image &dst)
             mov x1, %0
             mov x3, %1
 
-        NV12_H2:
+        1:
             cmp %[h], #2
-            blt NV12_END
+            blt 4f
             sub %[h], %[h], #2
             mov x0, x1
             add x1, x1, %[ss]
@@ -797,8 +798,8 @@ void rgb_to_nv12(const Image &src, const Image &dst)
 
             and x5, %[w], #7
             sub x4, %[w], x5
-            cbz x4, NV12_H2_L2
-        NV12_H2_L8:
+            cbz x4, 3f
+        2:
             ld3 {v0.8b, v1.8b, v2.8b}, [x0], #24
             ld3 {v3.8b, v4.8b, v5.8b}, [x1], #24
 
@@ -841,10 +842,10 @@ void rgb_to_nv12(const Image &src, const Image &dst)
             zip1 v3.8b, v3.8b, v4.8b
             subs x4, x4, #8
             st1 {v3.8b}, [%2], #8
-            bgt NV12_H2_L8
-        NV12_H2_L2:
+            bgt 2b
+        3:
             cmp x5, #2
-            blt NV12_H2
+            blt 1b
 
             ld3 {v0.b, v1.b, v2.b}[0], [x0], #3
             ld3 {v0.b, v1.b, v2.b}[1], [x0], #3
@@ -887,9 +888,9 @@ void rgb_to_nv12(const Image &src, const Image &dst)
 
             zip1 v3.8b, v3.8b, v4.8b
             st1 {v3.h}[0], [%2], #2
-            bgt NV12_H2_L2
+            b 3b
 
-        NV12_END:
+        4:
         )"
         :
         : "r"(src.data()), "r"(y), "r"(uv)
@@ -921,9 +922,9 @@ void rgb_to_nv21(const Image &src, const Image &dst)
             mov x1, %0
             mov x3, %1
 
-        NV21_H2:
+        1:
             cmp %[h], #2
-            blt NV21_END
+            blt 4f
             sub %[h], %[h], #2
             mov x0, x1
             add x1, x1, %[ss]
@@ -933,8 +934,8 @@ void rgb_to_nv21(const Image &src, const Image &dst)
 
             and x5, %[w], #7
             sub x4, %[w], x5
-            cbz x4, NV21_H2_L2
-        NV21_H2_L8:
+            cbz x4, 3f
+        2:
             ld3 {v0.8b, v1.8b, v2.8b}, [x0], #24
             ld3 {v3.8b, v4.8b, v5.8b}, [x1], #24
 
@@ -977,10 +978,10 @@ void rgb_to_nv21(const Image &src, const Image &dst)
             zip1 v3.8b, v4.8b, v3.8b
             subs x4, x4, #8
             st1 {v3.8b}, [%2], #8
-            bgt NV21_H2_L8
-        NV21_H2_L2:
+            bgt 2b
+        3:
             cmp x5, #2
-            blt NV21_H2
+            blt 1b
 
             ld3 {v0.b, v1.b, v2.b}[0], [x0], #3
             ld3 {v0.b, v1.b, v2.b}[1], [x0], #3
@@ -1023,9 +1024,9 @@ void rgb_to_nv21(const Image &src, const Image &dst)
 
             zip1 v3.8b, v4.8b, v3.8b
             st1 {v3.h}[0], [%2], #2
-            bgt NV21_H2_L2
+            b 3b
 
-        NV21_END:
+        4:
         )"
         :
         : "r"(src.data()), "r"(y), "r"(uv)

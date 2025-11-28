@@ -393,24 +393,21 @@ void i420_to_gray(const Image &src, const Image &dst)
         R"(
             and x0, %1, #15
             sub %1, %1, x0
-            cbz %1, GRAY_L1
-
-        GRAY_L16:
-            ld1       {v0.16b}, [%0], #16
-            prfm      pldl1keep, [%0, 448]
-            st1       {v0.16b}, [%2], #16
-            subs      %1, %1, #16
-            bgt       GRAY_L16
-
-        GRAY_L1:
-            cmp       x0, #1
-            blt       GRAY_END
-            ld1       {v0.b}[0], [%0], #1
-            st1       {v0.b}[1], [%2], #1
-            sub       x0, x0, #1
-            b GRAY_L1
-
-        GRAY_END:
+            cbz %1, 2f
+        1:
+            ld1 {v0.16b}, [%0], #16
+            prfm pldl1keep, [%0, 448]
+            st1 {v0.16b}, [%2], #16
+            subs %1, %1, #16
+            bgt 1b
+        2:
+            cmp x0, #1
+            blt 3f
+            ld1 {v0.b}[0], [%0], #1
+            st1 {v0.b}[1], [%2], #1
+            sub x0, x0, #1
+            b 2b
+        3:
         )"
         :
         : "r"(src.data()), "r"(src.pixels()), "r"(dst.data())
@@ -425,37 +422,31 @@ void i420_to_rgba(const Image &src, const Image &dst)
             mov x1, %0
             add x2, x1, %1
             add x7, x2, %1, lsr #2
-
             mov x4, %2
             movi v9.16b, %[alpha]
-
-        RGBA_H2:
+        1:
             mov x0, x1
             add x1, x1, %[w]
             mov x3, x4
             add x4, x4, %[ds]
             cmp %[h], #2
-            blt RGBA_END
+            blt 4f
             sub %[h], %[h], #2
             and x5, %[w], #15
             sub x6, %[w], x5
-            cbz x6, RGBA_L2
-
-        RGBA_L16:
+            cbz x6, 3f
+        2:
             ld1 {v0.16b}, [x0], #16
             ushll2 v1.8h, v0.16b, %[shift]
             ushll v0.8h, v0.8b, %[shift]
-
             ld1 {v2.16b}, [x1], #16
             ushll2 v3.8h, v2.16b, %[shift]
             ushll v2.8h, v2.8b, %[shift]
-
             ld1 {v4.8b}, [x2], #8
             ld1 {v5.8b}, [x7], #8
             zip1 v4.16b, v4.16b, v4.16b
             zip1 v5.16b, v5.16b, v5.16b
             prfm pldl1keep, [x0, 448]
-
             // r0
             umull v6.8h, v5.8b, v28.8b
             umull2 v10.8h, v5.16b, v28.16b
@@ -465,7 +456,6 @@ void i420_to_rgba(const Image &src, const Image &dst)
             uqsub v10.8h, v10.8h, v25.8h
             uqrshrn v6.8b, v6.8h, %[shift]
             uqrshrn2 v6.16b, v10.8h, %[shift]
-
             // g0
             umull v7.8h, v4.8b, v29.8b
             umull2 v11.8h, v4.16b, v29.16b
@@ -478,7 +468,6 @@ void i420_to_rgba(const Image &src, const Image &dst)
             uqrshrn v7.8b, v7.8h, %[shift]
             uqrshrn2 v7.16b, v11.8h, %[shift]
             prfm pldl1keep, [x1, 448]
-
             // b0
             umull v8.8h, v4.8b, v31.8b
             umull2 v12.8h, v4.16b, v31.16b
@@ -489,7 +478,6 @@ void i420_to_rgba(const Image &src, const Image &dst)
             uqrshrn v8.8b, v8.8h, %[shift]
             uqrshrn2 v8.16b, v12.8h, %[shift]
             st4 {v6.16b, v7.16b, v8.16b, v9.16b}, [x3], #64
-
             // r1
             umull v6.8h, v5.8b, v28.8b
             umull2 v10.8h, v5.16b, v28.16b
@@ -500,7 +488,6 @@ void i420_to_rgba(const Image &src, const Image &dst)
             uqrshrn v6.8b, v6.8h, %[shift]
             uqrshrn2 v6.16b, v10.8h, %[shift]
             prfm pldl1keep, [x2, 448]
-
             // g1
             umull v7.8h, v4.8b, v29.8b
             umull2 v11.8h, v4.16b, v29.16b
@@ -512,7 +499,6 @@ void i420_to_rgba(const Image &src, const Image &dst)
             uqsub v11.8h, v13.8h, v11.8h
             uqrshrn v7.8b, v7.8h, %[shift]
             uqrshrn2 v7.16b, v11.8h, %[shift]
-
             // b1
             umull v8.8h, v4.8b, v31.8b
             umull2 v12.8h, v4.16b, v31.16b
@@ -522,29 +508,23 @@ void i420_to_rgba(const Image &src, const Image &dst)
             uqsub v12.8h, v12.8h, v27.8h
             uqrshrn v8.8b, v8.8h, %[shift]
             uqrshrn2 v8.16b, v12.8h, %[shift]
-
             subs x6, x6, #16
             st4 {v6.16b, v7.16b, v8.16b, v9.16b}, [x4], #64
+            bgt 2b
 
-            bgt RGBA_L16
-
-        RGBA_L2:
+        3:
             cmp x5, #2
-            blt RGBA_H2
-
+            blt 1b
             ld1 {v0.h}[0], [x0], #2
             ushll2 v1.8h, v0.16b, %[shift]
             ushll v0.8h, v0.8b, %[shift]
-
             ld1 {v2.h}[0], [x1], #2
             ushll2 v3.8h, v2.16b, %[shift]
             ushll v2.8h, v2.8b, %[shift]
-
             ld1 {v4.b}[0], [x2], #1
             ld1 {v5.b}[0], [x7], #1
             zip1 v4.16b, v4.16b, v4.16b
             zip1 v5.16b, v5.16b, v5.16b
-
             // r0
             umull v6.8h, v5.8b, v28.8b
             umull2 v10.8h, v5.16b, v28.16b
@@ -554,7 +534,6 @@ void i420_to_rgba(const Image &src, const Image &dst)
             uqsub v10.8h, v10.8h, v25.8h
             uqrshrn v6.8b, v6.8h, %[shift]
             uqrshrn2 v6.16b, v10.8h, %[shift]
-
             // g0
             umull v7.8h, v4.8b, v29.8b
             umull2 v11.8h, v4.16b, v29.16b
@@ -566,7 +545,6 @@ void i420_to_rgba(const Image &src, const Image &dst)
             uqsub v11.8h, v13.8h, v11.8h
             uqrshrn v7.8b, v7.8h, %[shift]
             uqrshrn2 v7.16b, v11.8h, %[shift]
-
             // b0
             umull v8.8h, v4.8b, v31.8b
             umull2 v12.8h, v4.16b, v31.16b
@@ -578,7 +556,6 @@ void i420_to_rgba(const Image &src, const Image &dst)
             uqrshrn2 v8.16b, v12.8h, %[shift]
             st4 {v6.b, v7.b, v8.b, v9.b}[0], [x3], #4
             st4 {v6.b, v7.b, v8.b, v9.b}[1], [x3], #4
-
             // r1
             umull v6.8h, v5.8b, v28.8b
             umull2 v10.8h, v5.16b, v28.16b
@@ -588,7 +565,6 @@ void i420_to_rgba(const Image &src, const Image &dst)
             uqsub v10.8h, v10.8h, v25.8h
             uqrshrn v6.8b, v6.8h, %[shift]
             uqrshrn2 v6.16b, v10.8h, %[shift]
-
             // g1
             umull v7.8h, v4.8b, v29.8b
             umull2 v11.8h, v4.16b, v29.16b
@@ -600,7 +576,6 @@ void i420_to_rgba(const Image &src, const Image &dst)
             uqsub v11.8h, v13.8h, v11.8h
             uqrshrn v7.8b, v7.8h, %[shift]
             uqrshrn2 v7.16b, v11.8h, %[shift]
-
             // b1
             umull v8.8h, v4.8b, v31.8b
             umull2 v12.8h, v4.16b, v31.16b
@@ -612,10 +587,9 @@ void i420_to_rgba(const Image &src, const Image &dst)
             uqrshrn2 v8.16b, v12.8h, %[shift]
             st4 {v6.b, v7.b, v8.b, v9.b}[0], [x4], #4
             st4 {v6.b, v7.b, v8.b, v9.b}[1], [x4], #4
-
             sub x5, x5, #2
-            b RGBA_L2
-        RGBA_END:
+            b 3b
+        4:
         )"
         :
         : "r"(src.data()), "r"(src.pixels()), "r"(dst.data())
@@ -635,33 +609,30 @@ void i420_to_rgb(const Image &src, const Image &dst)
             mov x4, %2
             add x7, x2, %1, lsr #2
 
-        RGB_H2:
+        1:
             mov x0, x1
             add x1, x1, %[w]
             mov x3, x4
             add x4, x4, %[ds]
             cmp %[h], #2
-            blt RGB_END
+            blt 4f
             sub %[h], %[h], #2
             and x5, %[w], #15
             sub x6, %[w], x5
-            cbz x6, RGB_L2
+            cbz x6, 3f
 
-        RGB_L16:
+        2:
             ld1 {v0.16b}, [x0], #16
             ushll2 v1.8h, v0.16b, %[shift]
             ushll v0.8h, v0.8b, %[shift]
-
             ld1 {v2.16b}, [x1], #16
             ushll2 v3.8h, v2.16b, %[shift]
             ushll v2.8h, v2.8b, %[shift]
-
             ld1 {v4.8b}, [x2], #8
             ld1 {v5.8b}, [x7], #8
             zip1 v4.16b, v4.16b, v4.16b
             zip1 v5.16b, v5.16b, v5.16b
             prfm pldl1keep, [x0, 448]
-
             // r0
             umull v6.8h, v5.8b, v28.8b
             umull2 v10.8h, v5.16b, v28.16b
@@ -671,7 +642,6 @@ void i420_to_rgb(const Image &src, const Image &dst)
             uqsub v10.8h, v10.8h, v25.8h
             uqrshrn v6.8b, v6.8h, %[shift]
             uqrshrn2 v6.16b, v10.8h, %[shift]
-
             // g0
             umull v7.8h, v4.8b, v29.8b
             umull2 v11.8h, v4.16b, v29.16b
@@ -684,7 +654,6 @@ void i420_to_rgb(const Image &src, const Image &dst)
             uqrshrn v7.8b, v7.8h, %[shift]
             uqrshrn2 v7.16b, v11.8h, %[shift]
             prfm pldl1keep, [x1, 448]
-
             // b0
             umull v8.8h, v4.8b, v31.8b
             umull2 v12.8h, v4.16b, v31.16b
@@ -695,7 +664,6 @@ void i420_to_rgb(const Image &src, const Image &dst)
             uqrshrn v8.8b, v8.8h, %[shift]
             uqrshrn2 v8.16b, v12.8h, %[shift]
             st3 {v6.16b, v7.16b, v8.16b}, [x3], #48
-
             // r1
             umull v6.8h, v5.8b, v28.8b
             umull2 v10.8h, v5.16b, v28.16b
@@ -706,7 +674,6 @@ void i420_to_rgb(const Image &src, const Image &dst)
             uqrshrn v6.8b, v6.8h, %[shift]
             uqrshrn2 v6.16b, v10.8h, %[shift]
             prfm pldl1keep, [x2, 448]
-
             // g1
             umull v7.8h, v4.8b, v29.8b
             umull2 v11.8h, v4.16b, v29.16b
@@ -718,7 +685,6 @@ void i420_to_rgb(const Image &src, const Image &dst)
             uqsub v11.8h, v13.8h, v11.8h
             uqrshrn v7.8b, v7.8h, %[shift]
             uqrshrn2 v7.16b, v11.8h, %[shift]
-
             // b1
             umull v8.8h, v4.8b, v31.8b
             umull2 v12.8h, v4.16b, v31.16b
@@ -728,29 +694,23 @@ void i420_to_rgb(const Image &src, const Image &dst)
             uqsub v12.8h, v12.8h, v27.8h
             uqrshrn v8.8b, v8.8h, %[shift]
             uqrshrn2 v8.16b, v12.8h, %[shift]
-
             subs x6, x6, #16
             st3 {v6.16b, v7.16b, v8.16b}, [x4], #48
+            bgt 2b
 
-            bgt RGB_L16
-
-        RGB_L2:
+        3:
             cmp x5, #2
-            blt RGB_H2
-
+            blt 1b
             ld1 {v0.h}[0], [x0], #2
             ushll2 v1.8h, v0.16b, %[shift]
             ushll v0.8h, v0.8b, %[shift]
-
             ld1 {v2.h}[0], [x1], #2
             ushll2 v3.8h, v2.16b, %[shift]
             ushll v2.8h, v2.8b, %[shift]
-
             ld1 {v4.b}[0], [x2], #1
             ld1 {v5.b}[0], [x7], #1
             zip1 v4.16b, v4.16b, v4.16b
             zip1 v5.16b, v5.16b, v5.16b
-
             // r0
             umull v6.8h, v5.8b, v28.8b
             umull2 v10.8h, v5.16b, v28.16b
@@ -760,7 +720,6 @@ void i420_to_rgb(const Image &src, const Image &dst)
             uqsub v10.8h, v10.8h, v25.8h
             uqrshrn v6.8b, v6.8h, %[shift]
             uqrshrn2 v6.16b, v10.8h, %[shift]
-
             // g0
             umull v7.8h, v4.8b, v29.8b
             umull2 v11.8h, v4.16b, v29.16b
@@ -772,7 +731,6 @@ void i420_to_rgb(const Image &src, const Image &dst)
             uqsub v11.8h, v13.8h, v11.8h
             uqrshrn v7.8b, v7.8h, %[shift]
             uqrshrn2 v7.16b, v11.8h, %[shift]
-
             // b0
             umull v8.8h, v4.8b, v31.8b
             umull2 v12.8h, v4.16b, v31.16b
@@ -784,7 +742,6 @@ void i420_to_rgb(const Image &src, const Image &dst)
             uqrshrn2 v8.16b, v12.8h, %[shift]
             st3 {v6.b, v7.b, v8.b}[0], [x3], #3
             st3 {v6.b, v7.b, v8.b}[1], [x3], #3
-
             // r1
             umull v6.8h, v5.8b, v28.8b
             umull2 v10.8h, v5.16b, v28.16b
@@ -794,7 +751,6 @@ void i420_to_rgb(const Image &src, const Image &dst)
             uqsub v10.8h, v10.8h, v25.8h
             uqrshrn v6.8b, v6.8h, %[shift]
             uqrshrn2 v6.16b, v10.8h, %[shift]
-
             // g1
             umull v7.8h, v4.8b, v29.8b
             umull2 v11.8h, v4.16b, v29.16b
@@ -806,7 +762,6 @@ void i420_to_rgb(const Image &src, const Image &dst)
             uqsub v11.8h, v13.8h, v11.8h
             uqrshrn v7.8b, v7.8h, %[shift]
             uqrshrn2 v7.16b, v11.8h, %[shift]
-
             // b1
             umull v8.8h, v4.8b, v31.8b
             umull2 v12.8h, v4.16b, v31.16b
@@ -818,10 +773,10 @@ void i420_to_rgb(const Image &src, const Image &dst)
             uqrshrn2 v8.16b, v12.8h, %[shift]
             st3 {v6.b, v7.b, v8.b}[0], [x4], #3
             st3 {v6.b, v7.b, v8.b}[1], [x4], #3
-
             sub x5, x5, #2
-            b RGB_L2
-        RGB_END:
+            b 3b
+
+        4:
         )"
         :
         : "r"(src.data()), "r"(src.pixels()), "r"(dst.data())
@@ -841,33 +796,30 @@ void i420_to_bgr(const Image &src, const Image &dst)
             mov x4, %2
             add x7, x2, %1, lsr #2
 
-        BGR_H2:
+        1:
             mov x0, x1
             add x1, x1, %[w]
             mov x3, x4
             add x4, x4, %[ds]
             cmp %[h], #2
-            blt BGR_END
+            blt 4f
             sub %[h], %[h], #2
             and x5, %[w], #15
             sub x6, %[w], x5
-            cbz x6, BGR_L2
+            cbz x6, 3f
 
-        BGR_L16:
+        2:
             ld1 {v0.16b}, [x0], #16
             ushll2 v1.8h, v0.16b, %[shift]
             ushll v0.8h, v0.8b, %[shift]
-
             ld1 {v2.16b}, [x1], #16
             ushll2 v3.8h, v2.16b, %[shift]
             ushll v2.8h, v2.8b, %[shift]
-
             ld1 {v4.8b}, [x2], #8
             ld1 {v5.8b}, [x7], #8
             zip1 v4.16b, v4.16b, v4.16b
             zip1 v5.16b, v5.16b, v5.16b
             prfm pldl1keep, [x0, 448]
-
             // r0
             umull v8.8h, v5.8b, v28.8b
             umull2 v10.8h, v5.16b, v28.16b
@@ -877,7 +829,6 @@ void i420_to_bgr(const Image &src, const Image &dst)
             uqsub v10.8h, v10.8h, v25.8h
             uqrshrn v8.8b, v8.8h, %[shift]
             uqrshrn2 v8.16b, v10.8h, %[shift]
-
             // g0
             umull v7.8h, v4.8b, v29.8b
             umull2 v11.8h, v4.16b, v29.16b
@@ -890,7 +841,6 @@ void i420_to_bgr(const Image &src, const Image &dst)
             uqrshrn v7.8b, v7.8h, %[shift]
             uqrshrn2 v7.16b, v11.8h, %[shift]
             prfm pldl1keep, [x1, 448]
-
             // b0
             umull v6.8h, v4.8b, v31.8b
             umull2 v12.8h, v4.16b, v31.16b
@@ -901,7 +851,6 @@ void i420_to_bgr(const Image &src, const Image &dst)
             uqrshrn v6.8b, v6.8h, %[shift]
             uqrshrn2 v6.16b, v12.8h, %[shift]
             st3 {v6.16b, v7.16b, v8.16b}, [x3], #48
-
             // r1
             umull v8.8h, v5.8b, v28.8b
             umull2 v10.8h, v5.16b, v28.16b
@@ -912,7 +861,6 @@ void i420_to_bgr(const Image &src, const Image &dst)
             uqrshrn v8.8b, v8.8h, %[shift]
             uqrshrn2 v8.16b, v10.8h, %[shift]
             prfm pldl1keep, [x2, 448]
-
             // g1
             umull v7.8h, v4.8b, v29.8b
             umull2 v11.8h, v4.16b, v29.16b
@@ -924,7 +872,6 @@ void i420_to_bgr(const Image &src, const Image &dst)
             uqsub v11.8h, v13.8h, v11.8h
             uqrshrn v7.8b, v7.8h, %[shift]
             uqrshrn2 v7.16b, v11.8h, %[shift]
-
             // b1
             umull v6.8h, v4.8b, v31.8b
             umull2 v12.8h, v4.16b, v31.16b
@@ -934,29 +881,23 @@ void i420_to_bgr(const Image &src, const Image &dst)
             uqsub v12.8h, v12.8h, v27.8h
             uqrshrn v6.8b, v6.8h, %[shift]
             uqrshrn2 v6.16b, v12.8h, %[shift]
-
             subs x6, x6, #16
             st3 {v6.16b, v7.16b, v8.16b}, [x4], #48
+            bgt 2b
 
-            bgt BGR_L16
-
-        BGR_L2:
+        3:
             cmp x5, #2
-            blt BGR_H2
-
+            blt 1b
             ld1 {v0.h}[0], [x0], #2
             ushll2 v1.8h, v0.16b, %[shift]
             ushll v0.8h, v0.8b, %[shift]
-
             ld1 {v2.h}[0], [x1], #2
             ushll2 v3.8h, v2.16b, %[shift]
             ushll v2.8h, v2.8b, %[shift]
-
             ld1 {v4.b}[0], [x2], #1
             ld1 {v5.b}[0], [x7], #1
             zip1 v4.16b, v4.16b, v4.16b
             zip1 v5.16b, v5.16b, v5.16b
-
             // r0
             umull v8.8h, v5.8b, v28.8b
             umull2 v10.8h, v5.16b, v28.16b
@@ -966,7 +907,6 @@ void i420_to_bgr(const Image &src, const Image &dst)
             uqsub v10.8h, v10.8h, v25.8h
             uqrshrn v8.8b, v8.8h, %[shift]
             uqrshrn2 v8.16b, v10.8h, %[shift]
-
             // g0
             umull v7.8h, v4.8b, v29.8b
             umull2 v11.8h, v4.16b, v29.16b
@@ -978,7 +918,6 @@ void i420_to_bgr(const Image &src, const Image &dst)
             uqsub v11.8h, v13.8h, v11.8h
             uqrshrn v7.8b, v7.8h, %[shift]
             uqrshrn2 v7.16b, v11.8h, %[shift]
-
             // b0
             umull v6.8h, v4.8b, v31.8b
             umull2 v12.8h, v4.16b, v31.16b
@@ -990,7 +929,6 @@ void i420_to_bgr(const Image &src, const Image &dst)
             uqrshrn2 v6.16b, v12.8h, %[shift]
             st3 {v6.b, v7.b, v8.b}[0], [x3], #3
             st3 {v6.b, v7.b, v8.b}[1], [x3], #3
-
             // r1
             umull v8.8h, v5.8b, v28.8b
             umull2 v10.8h, v5.16b, v28.16b
@@ -1000,7 +938,6 @@ void i420_to_bgr(const Image &src, const Image &dst)
             uqsub v10.8h, v10.8h, v25.8h
             uqrshrn v8.8b, v8.8h, %[shift]
             uqrshrn2 v8.16b, v10.8h, %[shift]
-
             // g1
             umull v7.8h, v4.8b, v29.8b
             umull2 v11.8h, v4.16b, v29.16b
@@ -1012,7 +949,6 @@ void i420_to_bgr(const Image &src, const Image &dst)
             uqsub v11.8h, v13.8h, v11.8h
             uqrshrn v7.8b, v7.8h, %[shift]
             uqrshrn2 v7.16b, v11.8h, %[shift]
-
             // b1
             umull v6.8h, v4.8b, v31.8b
             umull2 v12.8h, v4.16b, v31.16b
@@ -1024,10 +960,10 @@ void i420_to_bgr(const Image &src, const Image &dst)
             uqrshrn2 v6.16b, v12.8h, %[shift]
             st3 {v6.b, v7.b, v8.b}[0], [x4], #3
             st3 {v6.b, v7.b, v8.b}[1], [x4], #3
-
             sub x5, x5, #2
-            b BGR_L2
-        BGR_END:
+            b 3b
+
+        4:
         )"
         :
         : "r"(src.data()), "r"(src.pixels()), "r"(dst.data())
@@ -1048,33 +984,30 @@ void i420_to_bgra(const Image &src, const Image &dst)
             mov x4, %2
             add x7, x2, %1, lsr #2
 
-        BGRA_H2:
+        1:
             mov x0, x1
             add x1, x1, %[w]
             mov x3, x4
             add x4, x4, %[ds]
             cmp %[h], #2
-            blt BGRA_END
+            blt 4f
             sub %[h], %[h], #2
             and x5, %[w], #15
             sub x6, %[w], x5
-            cbz x6, BGRA_L2
+            cbz x6, 3f
 
-        BGRA_L16:
+        2:
             ld1 {v0.16b}, [x0], #16
             ushll2 v1.8h, v0.16b, %[shift]
             ushll v0.8h, v0.8b, %[shift]
-
             ld1 {v2.16b}, [x1], #16
             ushll2 v3.8h, v2.16b, %[shift]
             ushll v2.8h, v2.8b, %[shift]
-
             ld1 {v4.8b}, [x2], #8
             ld1 {v5.8b}, [x7], #8
             zip1 v4.16b, v4.16b, v4.16b
             zip1 v5.16b, v5.16b, v5.16b
             prfm pldl1keep, [x0, #448]
-
             // r0
             umull v8.8h, v5.8b, v28.8b
             umull2 v10.8h, v5.16b, v28.16b
@@ -1084,7 +1017,6 @@ void i420_to_bgra(const Image &src, const Image &dst)
             uqsub v10.8h, v10.8h, v25.8h
             uqrshrn v8.8b, v8.8h, %[shift]
             uqrshrn2 v8.16b, v10.8h, %[shift]
-
             // g0
             umull v7.8h, v4.8b, v29.8b
             umull2 v11.8h, v4.16b, v29.16b
@@ -1097,7 +1029,6 @@ void i420_to_bgra(const Image &src, const Image &dst)
             uqrshrn v7.8b, v7.8h, %[shift]
             uqrshrn2 v7.16b, v11.8h, %[shift]
             prfm pldl1keep, [x1, #448]
-
             // b0
             umull v6.8h, v4.8b, v31.8b
             umull2 v12.8h, v4.16b, v31.16b
@@ -1108,7 +1039,6 @@ void i420_to_bgra(const Image &src, const Image &dst)
             uqrshrn v6.8b, v6.8h, %[shift]
             uqrshrn2 v6.16b, v12.8h, %[shift]
             st4 {v6.16b, v7.16b, v8.16b, v9.16b}, [x3], #64
-
             // r1
             umull v8.8h, v5.8b, v28.8b
             umull2 v10.8h, v5.16b, v28.16b
@@ -1119,7 +1049,6 @@ void i420_to_bgra(const Image &src, const Image &dst)
             uqrshrn v8.8b, v8.8h, %[shift]
             uqrshrn2 v8.16b, v10.8h, %[shift]
             prfm pldl1keep, [x2, 448]
-
             // g1
             umull v7.8h, v4.8b, v29.8b
             umull2 v11.8h, v4.16b, v29.16b
@@ -1131,7 +1060,6 @@ void i420_to_bgra(const Image &src, const Image &dst)
             uqsub v11.8h, v13.8h, v11.8h
             uqrshrn v7.8b, v7.8h, %[shift]
             uqrshrn2 v7.16b, v11.8h, %[shift]
-
             // b1
             umull v6.8h, v4.8b, v31.8b
             umull2 v12.8h, v4.16b, v31.16b
@@ -1141,29 +1069,23 @@ void i420_to_bgra(const Image &src, const Image &dst)
             uqsub v12.8h, v12.8h, v27.8h
             uqrshrn v6.8b, v6.8h, %[shift]
             uqrshrn2 v6.16b, v12.8h, %[shift]
-
             subs x6, x6, #16
             st4 {v6.16b, v7.16b, v8.16b, v9.16b}, [x4], #64
+            bgt 2b
 
-            bgt BGRA_L16
-
-        BGRA_L2:
+        3:
             cmp x5, #2
-            blt BGRA_H2
-
+            blt 1b
             ld1 {v0.h}[0], [x0], #2
             ushll2 v1.8h, v0.16b, %[shift]
             ushll v0.8h, v0.8b, %[shift]
-
             ld1 {v2.h}[0], [x1], #2
             ushll2 v3.8h, v2.16b, %[shift]
             ushll v2.8h, v2.8b, %[shift]
-
             ld1 {v4.b}[0], [x2], #1
             ld1 {v5.b}[0], [x7], #1
             zip1 v4.16b, v4.16b, v4.16b
             zip1 v5.16b, v5.16b, v5.16b
-
             // r0
             umull v8.8h, v5.8b, v28.8b
             umull2 v10.8h, v5.16b, v28.16b
@@ -1173,7 +1095,6 @@ void i420_to_bgra(const Image &src, const Image &dst)
             uqsub v10.8h, v10.8h, v25.8h
             uqrshrn v8.8b, v8.8h, %[shift]
             uqrshrn2 v8.16b, v10.8h, %[shift]
-
             // g0
             umull v7.8h, v4.8b, v29.8b
             umull2 v11.8h, v4.16b, v29.16b
@@ -1185,7 +1106,6 @@ void i420_to_bgra(const Image &src, const Image &dst)
             uqsub v11.8h, v13.8h, v11.8h
             uqrshrn v7.8b, v7.8h, %[shift]
             uqrshrn2 v7.16b, v11.8h, %[shift]
-
             // b0
             umull v6.8h, v4.8b, v31.8b
             umull2 v12.8h, v4.16b, v31.16b
@@ -1197,7 +1117,6 @@ void i420_to_bgra(const Image &src, const Image &dst)
             uqrshrn2 v6.16b, v12.8h, %[shift]
             st4 {v6.b, v7.b, v8.b, v9.b}[0], [x3], #4
             st4 {v6.b, v7.b, v8.b, v9.b}[1], [x3], #4
-
             // r1
             umull v8.8h, v5.8b, v28.8b
             umull2 v10.8h, v5.16b, v28.16b
@@ -1207,7 +1126,6 @@ void i420_to_bgra(const Image &src, const Image &dst)
             uqsub v10.8h, v10.8h, v25.8h
             uqrshrn v8.8b, v8.8h, %[shift]
             uqrshrn2 v8.16b, v10.8h, %[shift]
-
             // g1
             umull v7.8h, v4.8b, v29.8b
             umull2 v11.8h, v4.16b, v29.16b
@@ -1219,7 +1137,6 @@ void i420_to_bgra(const Image &src, const Image &dst)
             uqsub v11.8h, v13.8h, v11.8h
             uqrshrn v7.8b, v7.8h, %[shift]
             uqrshrn2 v7.16b, v11.8h, %[shift]
-
             // b1
             umull v6.8h, v4.8b, v31.8b
             umull2 v12.8h, v4.16b, v31.16b
@@ -1231,10 +1148,10 @@ void i420_to_bgra(const Image &src, const Image &dst)
             uqrshrn2 v6.16b, v12.8h, %[shift]
             st4 {v6.b, v7.b, v8.b, v9.b}[0], [x4], #4
             st4 {v6.b, v7.b, v8.b, v9.b}[1], [x4], #4
-
             sub x5, x5, #2
-            b BGRA_L2
-        BGRA_END:
+            b 3b
+
+        4:
         )"
         :
         : "r"(src.data()), "r"(src.pixels()), "r"(dst.data())
@@ -1252,9 +1169,9 @@ void i420_to_yuyv(const Image &src, const Image &dst)
             mov x1, %0
             mov x6, %2
             add x7, x2, %1, lsr #2
-        YUYV_H2:
+        1:
             cmp %[h], #2
-            blt YUYV_END
+            blt 4f
             sub %[h], %[h], #2
             mov x0, x1
             add x1, x1, %[w]
@@ -1262,9 +1179,9 @@ void i420_to_yuyv(const Image &src, const Image &dst)
             add x6, x6, %[ds]
             and x4, %[w], #15
             sub x3, %[w], x4
-            cbz x3, YUYV_L2
+            cbz x3, 3f
 
-            YUYV_L16:
+            2:
                 ld1 {v0.16b}, [x0], #16
                 ld1 {v1.8b}, [x2], #8
                 ld1 {v3.8b}, [x7], #8
@@ -1278,11 +1195,11 @@ void i420_to_yuyv(const Image &src, const Image &dst)
                 st2 {v2.16b, v3.16b}, [x6], #32
                 subs x3, x3, #16
                 prfm pldl1keep, [x1, #448]
-                bgt YUYV_L16
+                bgt 2b
 
-            YUYV_L2:
+            3:
                 cmp x4, #2
-                blt YUYV_H2
+                blt 1b
                 ld1 {v0.h}[0], [x0], #2
                 ld1 {v1.b}[0], [x2], #1
                 ld1 {v3.b}[0], [x7], #1
@@ -1294,8 +1211,8 @@ void i420_to_yuyv(const Image &src, const Image &dst)
                 sub x4, x4, #2
                 st2 {v2.b, v3.b}[0], [x6], #2
                 st2 {v2.b, v3.b}[1], [x6], #2
-                b YUYV_L2
-            YUYV_END:
+                b 3b
+        4:
         )"
         :
         : "r"(src.data()), "r"(src.pixels()), "r"(dst.data())
@@ -1312,9 +1229,9 @@ void i420_to_uyvy(const Image &src, const Image &dst)
             mov x1, %0
             mov x6, %2
             add x7, x2, %1, lsr #2
-        UYVY_H2:
+        1:
             cmp %[h], #2
-            blt UYVY_END
+            blt 4f
             sub %[h], %[h], #2
             mov x0, x1
             add x1, x1, %[w]
@@ -1322,9 +1239,9 @@ void i420_to_uyvy(const Image &src, const Image &dst)
             add x6, x6, %[ds]
             and x4, %[w], #15
             sub x3, %[w], x4
-            cbz x3, UYVY_L2
+            cbz x3, 3f
 
-            UYVY_L16:
+            2:
                 ld1 {v1.16b}, [x0], #16
                 ld1 {v0.8b}, [x2], #8
                 ld1 {v2.8b}, [x7], #8
@@ -1338,11 +1255,11 @@ void i420_to_uyvy(const Image &src, const Image &dst)
                 prfm pldl1keep, [x7, #448]
                 subs x3, x3, #16
                 prfm pldl1keep, [x1, #448]
-                bgt UYVY_L16
+                bgt 2b
 
-            UYVY_L2:
+            3:
                 cmp x4, #2
-                blt UYVY_H2
+                blt 1b
                 ld1 {v1.h}[0], [x0], #2
                 ld1 {v0.b}[0], [x2], #1
                 ld1 {v2.b}[0], [x7], #1
@@ -1354,8 +1271,8 @@ void i420_to_uyvy(const Image &src, const Image &dst)
                 sub x4, x4, #2
                 st2 {v2.b, v3.b}[0], [x6], #2
                 st2 {v2.b, v3.b}[1], [x6], #2
-                b UYVY_L2
-            UYVY_END:
+                b 3b
+        4:
         )"
         :
         : "r"(src.data()), "r"(src.pixels()), "r"(dst.data())
@@ -1370,23 +1287,23 @@ void i420_to_i420(const Image &src, const Image &dst)
         R"(
             and x0, %1, #31
             sub %1, %1, x0
-            cbz %1, I420_L2
-        I420_L32:
+            cbz %1, 2f
+        1:
             ld1 {v0.16b, v1.16b}, [%0], #32
             prfm pldl1keep, [%0, #448]
             st1 {v0.16b, v1.16b}, [%2], #32
             subs %1, %1, #32
-            bgt I420_L32
+            bgt 1b
 
-        I420_L2:
+        2:
             cmp x0, #2
-            blt I420_END
+            blt 3f
             sub x0, x0, #2
             ld1 {v0.h}[0], [%0], #2
             st1 {v0.h}[0], [%2], #2
-            b I420_L2
+            b 2b
 
-        I420_END:
+        3:
         )"
         :
         : "r"(src.data()), "r"(src.size()), "r"(dst.data())
@@ -1401,48 +1318,48 @@ void i420_to_nv12(const Image &src, const Image &dst)
             mov x0, %1
             and x1, %1, #15
             sub x0, x0, x1
-            cbz x0, NV12_L2_Y
-        NV12_L16_Y:
+            cbz x0, 2f
+        1:
             ld1 {v0.16b}, [%0], #16
             prfm pldl1keep, [%0, #448]
             st1 {v0.16b}, [%2], #16
             subs x0, x0, #16
-            bgt NV12_L16_Y
+            bgt 1b
 
-        NV12_L2_Y:
+        2:
             cmp x1, #2
-            blt NV12_UV
+            blt 3f
             sub x1, x1, #2
             ld1 {v0.h}[0], [%0], #2
             st1 {v0.h}[0], [%2], #2
-            b NV12_L2_Y
+            b 2b
 
-        NV12_UV:
+        3:
             add x6, %0, %1, lsr #2
             lsr %1, %1, #1
             and x1, %1, #15
             sub %1, %1, x1
-            cbz %1, NV12_L2_UV
+            cbz %1, 5f
 
-        NV12_L16_UV:
+        4:
             ld1 {v0.8b}, [%0], #8
             ld1 {v1.8b}, [x6], #8
             prfm pldl1keep, [%0, #448]
             prfm pldl1keep, [x6, #448]
             st2 {v0.8b, v1.8b}, [%2], #16
             subs %1, %1, #16
-            bgt NV12_L16_UV
+            bgt 4b
 
-        NV12_L2_UV:
+        5:
             cmp x1, #2
-            blt NV12_END
+            blt 6f
             sub x1, x1, #2
             ld1 {v0.b}[0], [%0], #1
             ld1 {v1.b}[0], [x6], #1
             st2 {v0.b, v1.b}[0], [%2], #2
-            b NV12_L2_UV
+            b 5b
 
-        NV12_END:
+        6:
         )"
         :
         : "r"(src.data()), "r"(src.pixels()), "r"(dst.data())
@@ -1457,48 +1374,48 @@ void i420_to_nv21(const Image &src, const Image &dst)
             mov x0, %1
             and x1, %1, #15
             sub x0, x0, x1
-            cbz x0, NV21_L2_Y
-        NV21_L16_Y:
+            cbz x0, 2f
+        1:
             ld1 {v0.16b}, [%0], #16
             prfm pldl1keep, [%0, #448]
             st1 {v0.16b}, [%2], #16
             subs x0, x0, #16
-            bgt NV21_L16_Y
+            bgt 1b
 
-        NV21_L2_Y:
+        2:
             cmp x1, #2
-            blt NV21_UV
+            blt 3f
             sub x1, x1, #2
             ld1 {v0.h}[0], [%0], #2
             st1 {v0.h}[0], [%2], #2
-            b NV21_L2_Y
+            b 2b
 
-        NV21_UV:
+        3:
             add x0, %0, %1, lsr #2
             lsr %1, %1, #1
             and x1, %1, #15
             sub %1, %1, x1
-            cbz %1, NV21_L2_UV
+            cbz %1, 5f
 
-        NV21_L16_UV:
+        4:
             ld1 {v1.8b}, [%0], #8
             ld1 {v0.8b}, [x0], #8
             st2 {v0.8b, v1.8b}, [%2], #16
             prfm pldl1keep, [%0, #448]
             subs %1, %1, #16
             prfm pldl1keep, [x0, #448]
-            bgt NV21_L16_UV
+            bgt 4b
 
-        NV21_L2_UV:
+        5:
             cmp x1, #2
-            blt NV21_END
+            blt 6f
             sub x1, x1, #2
             ld1 {v1.b}[0], [%0], #1
             ld1 {v0.b}[0], [x0], #1
             st2 {v0.b, v1.b}[0], [%2], #2
-            b NV21_L2_UV
+            b 5b
 
-        NV21_END:
+        6:
         )"
         :
         : "r"(src.data()), "r"(src.pixels()), "r"(dst.data())

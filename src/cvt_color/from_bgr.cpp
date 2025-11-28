@@ -412,7 +412,7 @@ void bgr_to_bgr(const Image &src, const Image &dst)
             sub %1, %1, x0
             cbz %1, 2f
 
-        BGR_L16:
+        1:
             ld3 {v0.16b, v1.16b, v2.16b}, [%0], #48
             prfm pldl1keep, [%0, #48]
             subs %1, %1, #16
@@ -850,7 +850,7 @@ void bgr_to_nv12(const Image &src, const Image &dst)
             bgt 2b
         3:
             cmp x5, #2
-            blt 1f
+            blt 1b
 
             ld3 {v0.b, v1.b, v2.b}[0], [x0], #3
             ld3 {v0.b, v1.b, v2.b}[1], [x0], #3
